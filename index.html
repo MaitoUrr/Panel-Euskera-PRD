@@ -1,0 +1,2438 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Euskera · Panel de Control</title>
+<style>
+  :root{
+    --malt-900:#17130F;
+    --malt-800:#221B14;
+    --malt-700:#2C231A;
+    --copper-500:#C17D3E;
+    --copper-300:#E3A968;
+    --basque-green:#3F6B4C;
+    --basque-green-dim:#2B4A35;
+    --foam-100:#F3ECDD;
+    --foam-dim:rgba(243,236,221,0.56);
+    --foam-faint:rgba(243,236,221,0.14);
+    --rust-600:#A8462F;
+    --rust-dim:rgba(168,70,47,0.18);
+  }
+  *{box-sizing:border-box;}
+  body,html{margin:0;padding:0;}
+  .euskera-app{
+    background:var(--malt-900);
+    color:var(--foam-100);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    min-height:100vh;
+    display:flex;
+    font-size:14px;
+  }
+  .stencil{
+    font-family:"Arial Narrow","Helvetica Neue Condensed","Roboto Condensed",sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.09em;
+    font-weight:800;
+  }
+  .mono{font-family:"SF Mono","Consolas","Menlo",monospace;}
+
+  .sidebar{
+    width:220px;flex-shrink:0;background:var(--malt-900);
+    border-right:1px solid var(--foam-faint);padding:20px 14px;
+    display:flex;flex-direction:column;gap:16px;overflow-y:auto;
+  }
+  .brand{padding:0 6px;display:flex;align-items:center;gap:10px;}
+  .brand img{width:58px;height:58px;object-fit:contain;}
+  .brand .name{font-size:18px;color:var(--foam-100);line-height:1.1;}
+  .brand .sub{font-size:9.5px;color:var(--copper-300);letter-spacing:0.16em;margin-top:2px;}
+  .nav-group{display:flex;flex-direction:column;gap:2px;}
+  .nav-group-label{font-size:11.5px;letter-spacing:0.1em;color:var(--copper-300);text-transform:uppercase;padding:0 10px;margin:10px 0 4px;font-weight:800;}
+  .nav-group-label.first{margin-top:0;}
+  .nav button{
+    all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;
+    padding:8px 10px;border-radius:6px;color:var(--foam-dim);font-size:12.5px;font-weight:600;letter-spacing:0.02em;width:100%;
+  }
+  .nav button:hover{background:var(--malt-700);color:var(--foam-100);}
+  .nav button.active{background:var(--malt-700);color:var(--copper-300);}
+  .nav button:focus-visible{outline:2px solid var(--copper-300);outline-offset:2px;}
+  .nav .ico{width:16px;text-align:center;}
+  .sidebar-foot{margin-top:auto;font-size:10.5px;color:var(--foam-dim);padding:0 6px;line-height:1.5;}
+
+  .main{flex:1;min-width:0;padding:26px 34px 50px;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:22px;flex-wrap:wrap;gap:8px;}
+  .topbar h1{font-size:22px;margin:0;color:var(--foam-100);}
+  .topbar .date{color:var(--foam-dim);font-size:12px;}
+
+  .grid{display:grid;gap:14px;}
+  .kpis{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:22px;}
+  .kpi{width:330px;flex:none;padding:20px 22px;}
+  .kpi .label{font-size:14px;letter-spacing:0.06em;color:var(--foam-dim);text-transform:uppercase;white-space:nowrap;}
+  .kpi .value{font-size:39px;margin-top:6px;color:var(--foam-100);font-weight:800;}
+  .dash-cols{display:grid;grid-template-columns:minmax(0,700px) 1fr;gap:36px;align-items:start;}
+  .prod-cards{display:grid;grid-template-columns:repeat(2,minmax(230px,1fr));gap:12px;}
+  .prod-card{background:var(--malt-800);border:1px solid var(--foam-faint);border-radius:10px;padding:14px 16px;}
+  .prod-card .nombre{font-size:14px;color:var(--foam-dim);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;}
+  .prod-card .cantidad{font-size:24px;font-weight:800;color:var(--copper-300);}
+  .prod-card .sub{font-size:13.75px;color:var(--foam-dim);margin-top:8px;line-height:1.6;}
+  .prod-card .sub strong{color:var(--copper-300);font-weight:800;}
+  .dash-left{display:flex;gap:20px;align-items:stretch;}
+  .segment-cards{display:flex;flex-direction:column;gap:12px;padding-left:20px;border-left:1px solid var(--foam-faint);min-width:210px;}
+  .segment-card{border-radius:10px;padding:14px 16px;border:1px solid transparent;}
+  .segment-card .nombre{font-size:14px;color:var(--foam-dim);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;}
+  .segment-card .cantidad{font-size:22px;font-weight:800;}
+  .segment-card .sub{font-size:12.5px;color:var(--foam-dim);margin-top:6px;}
+  .segment-card.granel{background:rgba(63,107,78,0.22);border-color:rgba(159,216,174,0.25);}
+  .segment-card.granel .cantidad{color:#9FD8AE;}
+  .segment-card.recarga{background:rgba(193,125,62,0.16);border-color:rgba(227,169,104,0.3);}
+  .segment-card.recarga .cantidad{color:var(--copper-300);}
+  @media (max-width:900px){
+    .dash-left{flex-direction:column;}
+    .segment-cards{border-left:none;border-top:1px solid var(--foam-faint);padding-left:0;padding-top:16px;}
+    .dash-cols{grid-template-columns:1fr;}
+    .prod-cards{grid-template-columns:1fr;}
+  }
+  .card{background:var(--malt-800);border:1px solid var(--foam-faint);border-radius:10px;padding:16px 18px;}
+  .kpi .value.copper{color:var(--copper-300);}
+  .kpis-sm{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px;}
+  .kpi-sm{width:175px;flex:none;padding:14px 16px;}
+  .kpi-sm .label{font-size:10.5px;letter-spacing:0.05em;color:var(--foam-dim);text-transform:uppercase;white-space:nowrap;}
+  .kpi-sm .value{font-size:19px;margin-top:4px;font-weight:800;}
+  .kpi-sm .value.green{color:#7FB88F;}
+  .kpi-sm .value.copper{color:var(--copper-300);}
+  .kpi .value.rust{color:var(--rust-600);}
+  .kpi .value.green{color:#7FB88F;}
+
+  .section-title{font-size:12px;letter-spacing:0.1em;color:var(--foam-dim);text-transform:uppercase;margin:26px 0 10px;}
+  .section-title.first{margin-top:0;}
+
+  table{width:100%;border-collapse:collapse;font-size:14.5px;color:var(--foam-100);}
+  th{
+    text-align:left;font-size:11.5px;letter-spacing:0.06em;text-transform:uppercase;
+    color:var(--foam-dim);padding:9px 10px;border-bottom:1px solid var(--foam-faint);font-weight:700;
+  }
+  td{padding:11px 10px;border-bottom:1px solid var(--foam-faint);vertical-align:middle;color:var(--foam-100);}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:rgba(255,255,255,0.02);}
+  tr.clickable{cursor:pointer;}
+  tr.expand-row td{background:rgba(255,255,255,0.03);padding:12px 16px;}
+
+  .btn{
+    all:unset;cursor:pointer;background:var(--copper-500);color:var(--malt-900);
+    padding:8px 14px;border-radius:6px;font-weight:700;font-size:12.5px;letter-spacing:0.02em;
+  }
+  .btn:hover{background:var(--copper-300);}
+  .btn:focus-visible{outline:2px solid var(--foam-100);outline-offset:2px;}
+  .btn.ghost{background:transparent;border:1px solid var(--foam-faint);color:var(--foam-100);}
+  .btn.ghost:hover{border-color:var(--copper-300);color:var(--copper-300);}
+  .btn.small{padding:5px 10px;font-size:11px;}
+  .btn.danger{background:var(--rust-600);color:var(--foam-100);}
+
+  .row-actions{display:flex;gap:6px;flex-wrap:wrap;}
+
+  .keg{display:inline-block;width:14px;height:18px;border-radius:4px 4px 3px 3px;position:relative;vertical-align:middle;}
+  .keg::before{content:"";position:absolute;top:2px;left:0;right:0;height:2px;background:rgba(0,0,0,0.25);}
+  .keg.planta{background:var(--basque-green);}
+  .keg.entregado{background:var(--copper-500);}
+  .keg.atrasado{background:var(--rust-600);}
+
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;padding:4px 9px;border-radius:20px;}
+  .pill.planta{background:var(--basque-green-dim);color:#9FD8AE;}
+  .pill.entregado{background:rgba(193,125,62,0.18);color:var(--copper-300);}
+  .pill.atrasado{background:var(--rust-dim);color:#E0876F;}
+
+  input,select{
+    background:var(--malt-900);border:1px solid var(--foam-faint);color:var(--foam-100);
+    padding:9px 10px;border-radius:6px;font-size:13px;width:100%;font-family:inherit;
+  }
+  input:focus,select:focus{outline:2px solid var(--copper-300);outline-offset:1px;border-color:transparent;}
+  label{font-size:11px;color:var(--foam-dim);letter-spacing:0.04em;text-transform:uppercase;display:block;margin-bottom:5px;}
+  .field{margin-bottom:14px;}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+  .empty{color:var(--foam-dim);font-size:13px;padding:24px 4px;text-align:center;border:1px dashed var(--foam-faint);border-radius:8px;}
+
+  .modal-backdrop{position:fixed;inset:0;background:rgba(10,8,6,0.7);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;overflow-y:auto;}
+  .modal{background:var(--malt-800);border:1px solid var(--foam-faint);border-radius:12px;width:100%;max-width:460px;max-height:88vh;overflow-y:auto;padding:22px 24px;}
+  .modal.wide{max-width:920px;}
+  .modal h2{font-size:16px;margin:0 0 16px;}
+
+  .toast{
+    position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+    background:var(--copper-300);color:var(--malt-900);font-weight:700;font-size:12.5px;
+    padding:10px 18px;border-radius:8px;z-index:60;box-shadow:0 6px 20px rgba(0,0,0,0.4);
+  }
+
+  .modal th{white-space:nowrap;}
+  .modal td{white-space:nowrap;}
+  td.num{text-align:right;}
+  .qr-print{text-align:center;padding:14px;background:#fff;border-radius:8px;color:#111;}
+  .qr-print .lbl{font-family:"Arial Narrow",sans-serif;font-weight:800;letter-spacing:0.08em;margin-top:8px;font-size:16px;}
+
+  .informes-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:stretch;}
+  .informes-col-left{display:flex;flex-direction:column;gap:12px;}
+  .chart-card{padding:12px 14px 8px;display:flex;flex-direction:column;}
+  .chart-card canvas{max-height:190px;}
+  .chart-card-tall{display:flex;flex-direction:column;}
+  .chart-card-tall canvas{max-height:600px;flex:1;}
+  .chart-label{font-size:11.5px;color:var(--foam-dim);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;}
+  @media (max-width:900px){
+    .informes-grid{grid-template-columns:1fr;}
+  }
+  .item-row{display:grid;grid-template-columns:1fr 90px 110px 110px 32px;gap:8px;align-items:end;margin-bottom:8px;}
+  .item-row .field{margin-bottom:0;}
+  .item-row .subtotal-box{background:var(--malt-900);border:1px solid var(--foam-faint);border-radius:6px;padding:9px 10px;font-size:13px;color:var(--copper-300);font-weight:700;text-align:right;white-space:nowrap;overflow:hidden;}
+  .item-row .remove-btn{all:unset;cursor:pointer;color:var(--rust-600);font-size:18px;text-align:center;padding:8px 0;}
+  .item-row-headers{display:grid;grid-template-columns:1fr 90px 110px 110px 32px;gap:8px;margin-bottom:4px;}
+  .item-row-headers span{font-size:10px;color:var(--foam-dim);text-transform:uppercase;letter-spacing:0.05em;}
+  .remito-total{font-size:18px;font-weight:800;text-align:right;margin:14px 0;color:var(--copper-300);}
+
+  .menu-toggle{display:none;}
+  @media (max-width:760px){
+    .menu-toggle{
+      display:flex;align-items:center;justify-content:center;
+      position:fixed;top:14px;left:14px;z-index:50;
+      width:38px;height:38px;border-radius:8px;
+      background:var(--malt-800);border:1px solid var(--foam-faint);color:var(--foam-100);
+      font-size:18px;cursor:pointer;
+    }
+    .euskera-app{flex-direction:column;}
+    .sidebar{display:none;}
+    .sidebar.open{
+      display:flex;flex-direction:column;position:fixed;inset:0;z-index:45;
+      width:100%;height:100%;overflow-y:auto;padding:64px 16px 20px;
+    }
+    .sidebar-foot{display:block;}
+    .main{padding:64px 18px 18px;}
+    .field-row{grid-template-columns:1fr;}
+    .item-row, .item-row-headers{grid-template-columns:1fr;}
+    .item-row .remove-btn{justify-self:end;}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none !important;}}
+  @media print{
+    body *{visibility:hidden;}
+    .qr-print, .qr-print *{visibility:visible;}
+    .qr-print{position:fixed;top:40px;left:50%;transform:translateX(-50%);}
+  }
+</style>
+</head>
+<body>
+
+<div class="euskera-app" id="app"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script>
+(function(){
+  const API_URL = "api.php";
+
+  let state = { clientes:[], proveedores:[], insumos:[], productos:[], barriles:[], remitos:[], compras:[], mediosPago:[], tiposInsumo:[], ccPagos:[], recetas:[], lotesProduccion:[], categoriasGasto:[], gastos:[] };
+  let ui = { tab:"dashboard", modal:null, loaded:false, auth:null, loginError:"", expandedBarril:null, confirmData:null, remitoDraft:null, remitoGenerado:null, compraDraft:null, editCompraDraft:null,
+    informesRango:6, informes:{clienteId:"", barrilId:"", prodId:"", fechaDesde:"", fechaHasta:""}, alertaStockData:null, kardexData:null, loteDraft:null, recetaDraft:null, ajustesData:null, sidebarOpen:false, ajusteManualDraft:null };
+  let charts = {};
+
+  const todayISO = () => new Date().toISOString().slice(0,10);
+  const fmtMoney = (n) => "$" + Number(n||0).toLocaleString("es-AR");
+  const fmtDate = (d) => d ? new Date(d+"T00:00:00").toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"numeric"}) : "—";
+  const daysSince = (d) => !d ? 0 : Math.floor((Date.now()-new Date(d+"T00:00:00").getTime())/86400000);
+  const barrilEstado = (b) => b.estado==="planta" ? "planta" : (daysSince(b.fechaEntrega)>21 ? "atrasado" : "entregado");
+  const isThisMonth = (fecha) => fecha && fecha.slice(0,7) === todayISO().slice(0,7);
+  const cap = (s) => s ? s.charAt(0).toUpperCase()+s.slice(1) : s;
+  const fmtQty = (n) => Number(n||0).toLocaleString("es-AR", {minimumFractionDigits:3, maximumFractionDigits:3});
+  const fmtMoney3 = (n) => "$" + Number(n||0).toLocaleString("es-AR", {minimumFractionDigits:3, maximumFractionDigits:3});
+  const mediosPagoOpts = (selected) => state.mediosPago.map(m=>`<option ${selected===m.nombre?'selected':''}>${m.nombre}</option>`).join("");
+
+  async function api(action, payload){
+    const res = await fetch(API_URL, {
+      method:"POST", headers:{"Content-Type":"application/json"}, credentials:"same-origin",
+      body: JSON.stringify(Object.assign({action}, payload||{}))
+    });
+    if(!res.ok) throw new Error("Error de red: "+res.status);
+    return res.json();
+  }
+
+  function showToast(msg){
+    const t = document.createElement("div"); t.className="toast"; t.textContent=msg;
+    document.body.appendChild(t); setTimeout(()=>t.remove(), 2400);
+  }
+
+  async function refreshState(){
+    try{
+      const r = await api("get_data");
+      if(r.ok){ state = Object.assign({clientes:[],proveedores:[],insumos:[],productos:[],barriles:[],remitos:[],compras:[],mediosPago:[],tiposInsumo:[],ccPagos:[],recetas:[],lotesProduccion:[],categoriasGasto:[],gastos:[]}, r.data); }
+      else { showToast(r.error || "No se pudieron cargar los datos"); }
+    }catch(e){ console.error(e); showToast("No se pudo conectar con el servidor."); }
+  }
+
+  async function checkSession(){
+    try{ const r = await api("check_session"); if(r.ok && r.auth) ui.auth = r.auth; }
+    catch(e){ console.error(e); }
+  }
+
+  async function loadData(){
+    await checkSession();
+    if(ui.auth) await refreshState();
+    ui.loaded = true; render();
+    if(ui.auth) checkAlertaStock();
+  }
+
+  function checkAlertaStock(){
+    const insumosBajos = state.insumos.filter(i=>Number(i.stockSeguridad)>0 && Number(i.stock) < Number(i.stockSeguridad));
+    const productosBajos = state.productos.filter(p=>Number(p.stockSeguridad)>0 && Number(p.stock) < Number(p.stockSeguridad));
+    if(insumosBajos.length===0 && productosBajos.length===0) return;
+    ui.alertaStockData = {insumosBajos, productosBajos};
+    openModal('alertaStock');
+  }
+  function buildAlertaStockTexto(){
+    const d = ui.alertaStockData;
+    let txt = `⚠️ Alerta de stock bajo — Euskera (${new Date().toLocaleDateString('es-AR')})\n\n`;
+    if(d.insumosBajos.length){
+      txt += `Insumos:\n`;
+      d.insumosBajos.forEach(i=>{ txt += `• ${i.nombre}: ${i.stock} ${i.unidad} (seguridad: ${i.stockSeguridad} ${i.unidad})\n`; });
+      txt += `\n`;
+    }
+    if(d.productosBajos.length){
+      txt += `Productos:\n`;
+      d.productosBajos.forEach(p=>{ txt += `• ${p.nombre}: ${p.stock}\n`; });
+    }
+    return txt;
+  }
+
+  let isBusy = false;
+  async function run(action, payload, okMsg){
+    if(isBusy) return null; // evita que un doble click (o toque repetido) genere registros duplicados
+    isBusy = true;
+    try{
+      const r = await api(action, payload);
+      if(!r.ok){ showToast(r.error || "Ocurrió un error."); return null; }
+      await refreshState();
+      if(okMsg) showToast(okMsg);
+      return r;
+    }catch(e){ console.error(e); showToast("No se pudo conectar con el servidor."); return null; }
+    finally{ isBusy = false; }
+  }
+
+  // ---------- auth ----------
+  async function intentarLogin(){
+    const u = document.getElementById("f-user").value.trim().toLowerCase();
+    const p = document.getElementById("f-pass").value;
+    if(!u || !p){ ui.loginError="Completá usuario y contraseña."; render(); return; }
+    try{
+      const r = await api("login", {usuario:u, pass:p});
+      if(r.ok){ ui.auth=r.auth; ui.loginError=""; ui.loaded=false; render(); await loadData(); }
+      else{ ui.loginError = r.error || "Usuario o contraseña incorrectos."; render(); }
+    }catch(e){ ui.loginError="No se pudo conectar con el servidor."; render(); }
+  }
+  async function logout(){
+    try{ await api("logout"); }catch(e){}
+    ui.auth=null; ui.tab="dashboard"; ui.modal=null; render();
+  }
+
+  function setTab(tab){ ui.tab=tab; ui.modal=null; ui.expandedBarril=null; ui.sidebarOpen=false; if(tab==='ajustes') ui.ajustesData=null; render(); }
+  function toggleSidebar(){ ui.sidebarOpen = !ui.sidebarOpen; render(); }
+  function openModal(name, payload){ ui.modal={name, payload}; render(); }
+  function closeModal(){ ui.modal=null; render(); }
+  function toggleBarrilExpand(id){ ui.expandedBarril = ui.expandedBarril===id ? null : id; render(); }
+
+  // ---------- confirmación genérica para borrar ----------
+  function confirmarEliminar(tipo, id, label){
+    ui.confirmData = {tipo, id};
+    openModal('confirmarEliminar', label);
+  }
+  async function ejecutarEliminar(){
+    const {tipo, id} = ui.confirmData || {};
+    closeModal();
+    if(tipo==='barril') await run("eliminar_barril", {id}, "Barril eliminado");
+    if(tipo==='remito') await run("eliminar_remito", {id}, "Remito eliminado");
+    if(tipo==='loteProduccion') await run("eliminar_lote_produccion", {id}, "Lote eliminado");
+    if(tipo==='receta') await run("eliminar_receta", {id}, "Receta eliminada");
+    if(tipo==='compra') await run("eliminar_compra", {id}, "Compra eliminada");
+    if(tipo==='gasto') await run("eliminar_gasto", {id}, "Gasto eliminado");
+    if(tipo==='categoriaGasto') await run("eliminar_categoria_gasto", {id}, "Categoría eliminada");
+    render();
+  }
+
+  // ---------- barriles ----------
+  async function submitNuevoBarril(){
+    const id = document.getElementById("f-id").value.trim();
+    const descripcion = document.getElementById("f-descripcion").value.trim();
+    const litros = document.getElementById("f-litros").value;
+    if(!id || !litros) return showToast("Completá ID y litros");
+    if(await run("add_barril", {id, descripcion, litros}, "Barril agregado")){ closeModal(); render(); }
+  }
+  async function submitEditarBarril(id){
+    const nuevoId = document.getElementById("f-id").value.trim();
+    const descripcion = document.getElementById("f-descripcion").value.trim();
+    const litros = document.getElementById("f-litros").value;
+    if(!nuevoId || !litros) return showToast("Completá el identificador y los litros");
+    if(await run("editar_barril", {id, nuevoId, descripcion, litros}, "Barril actualizado")){ closeModal(); render(); }
+  }
+  async function submitEntregarBarril(id){
+    const clienteId = document.getElementById("f-cliente").value;
+    if(!clienteId) return showToast("Elegí un cliente");
+    if(await run("entregar_barril", {id, clienteId}, "Barril entregado")){ closeModal(); render(); }
+  }
+  async function devolverBarril(id){ if(await run("devolver_barril", {id}, "Barril devuelto a planta")) render(); }
+
+  // ---------- productos ----------
+  async function submitNuevoProducto(){
+    const nombre = document.getElementById("f-nombre").value.trim();
+    const codProd = document.getElementById("f-codprod").value.trim();
+    const tipo = document.getElementById("f-tipo").value;
+    const unidadMedida = document.getElementById("f-unidadmedida").value;
+    const precio = document.getElementById("f-precio").value;
+    const stock = document.getElementById("f-stock").value || 0;
+    const stockMinimo = document.getElementById("f-stockminimo").value || 0;
+    const stockSeguridad = document.getElementById("f-stockseguridad").value || 0;
+    if(!nombre || !precio) return showToast("Completá nombre y precio");
+    if(await run("add_producto", {nombre, codProd, tipo, unidadMedida, precio, stock, stockMinimo, stockSeguridad}, "Producto agregado")){ closeModal(); render(); }
+  }
+  async function submitEditarProducto(id){
+    const nombre = document.getElementById("f-nombre").value.trim();
+    const codProd = document.getElementById("f-codprod").value.trim();
+    const tipo = document.getElementById("f-tipo").value;
+    const unidadMedida = document.getElementById("f-unidadmedida").value;
+    const precio = document.getElementById("f-precio").value;
+    const stock = document.getElementById("f-stock").value;
+    const stockMinimo = document.getElementById("f-stockminimo").value || 0;
+    const stockSeguridad = document.getElementById("f-stockseguridad").value || 0;
+    if(!nombre || !precio) return showToast("Completá nombre y precio");
+    if(await run("editar_producto", {id, nombre, codProd, tipo, unidadMedida, precio, stock, stockMinimo, stockSeguridad}, "Producto actualizado")){ closeModal(); render(); }
+  }
+  async function ajustarStockProducto(id, delta){ if(await run("ajustar_stock_producto", {id, delta})) render(); }
+
+  // ---------- clientes ----------
+  async function submitNuevoCliente(){
+    const nombre = document.getElementById("f-nombre").value.trim();
+    if(!nombre) return showToast("Ingresá un nombre");
+    const data = {
+      nombre, razonSocial: document.getElementById("f-razonsocial").value.trim(),
+      cuit: document.getElementById("f-cuit").value.trim(), direccion: document.getElementById("f-direccion").value.trim(),
+      localidad: document.getElementById("f-localidad").value.trim(), provincia: document.getElementById("f-provincia").value.trim(),
+      cp: document.getElementById("f-cp").value.trim(), telefono: document.getElementById("f-telefono").value.trim(), email: document.getElementById("f-email").value.trim()
+    };
+    if(await run("add_cliente", data, "Cliente agregado")){ closeModal(); render(); }
+  }
+  async function submitEditarCliente(id){
+    const nombre = document.getElementById("f-nombre").value.trim();
+    if(!nombre) return showToast("Ingresá un nombre");
+    const data = {
+      id, nombre, razonSocial: document.getElementById("f-razonsocial").value.trim(),
+      cuit: document.getElementById("f-cuit").value.trim(), direccion: document.getElementById("f-direccion").value.trim(),
+      localidad: document.getElementById("f-localidad").value.trim(), provincia: document.getElementById("f-provincia").value.trim(),
+      cp: document.getElementById("f-cp").value.trim(), telefono: document.getElementById("f-telefono").value.trim(), email: document.getElementById("f-email").value.trim()
+    };
+    if(await run("editar_cliente", data, "Cliente actualizado")){ closeModal(); render(); }
+  }
+
+  // ---------- proveedores / insumos ----------
+  async function submitNuevoProveedor(){
+    const nombre = document.getElementById("f-nombre").value.trim();
+    if(!nombre) return showToast("Ingresá un nombre");
+    const data = {
+      nombre, cuit: document.getElementById("f-cuit").value.trim(), contacto: document.getElementById("f-contacto").value.trim(),
+      telefono: document.getElementById("f-telefono").value.trim(), email: document.getElementById("f-email").value.trim(), direccion: document.getElementById("f-direccion").value.trim(),
+      localidad: document.getElementById("f-localidad").value.trim(), provincia: document.getElementById("f-provincia").value.trim(),
+      cp: document.getElementById("f-cp").value.trim()
+    };
+    if(await run("add_proveedor", data, "Proveedor agregado")){ closeModal(); render(); }
+  }
+  async function submitEditarProveedor(id){
+    const nombre = document.getElementById("f-nombre").value.trim();
+    if(!nombre) return showToast("Ingresá un nombre");
+    const data = {
+      id, nombre, cuit: document.getElementById("f-cuit").value.trim(), contacto: document.getElementById("f-contacto").value.trim(),
+      telefono: document.getElementById("f-telefono").value.trim(), email: document.getElementById("f-email").value.trim(), direccion: document.getElementById("f-direccion").value.trim(),
+      localidad: document.getElementById("f-localidad").value.trim(), provincia: document.getElementById("f-provincia").value.trim(),
+      cp: document.getElementById("f-cp").value.trim()
+    };
+    if(await run("editar_proveedor", data, "Proveedor actualizado")){ closeModal(); render(); }
+  }
+  async function submitNuevoInsumo(){
+    const nombre = document.getElementById("f-nombre").value.trim();
+    const tipoId = document.getElementById("f-tipoinsumo").value || null;
+    const unidad = document.getElementById("f-unidad").value.trim() || "unidad";
+    const stock = document.getElementById("f-stock").value || 0;
+    const stockMinimo = document.getElementById("f-stockminimo").value || 0;
+    const stockSeguridad = document.getElementById("f-stockseguridad").value || 0;
+    const precioReferencia = document.getElementById("f-precioreferencia").value || 0;
+    if(!nombre) return showToast("Ingresá un nombre");
+    if(await run("add_insumo", {nombre, tipoId, unidad, stock, stockMinimo, stockSeguridad, precioReferencia}, "Insumo agregado")){ closeModal(); render(); }
+  }
+  async function submitEditarInsumo(id){
+    const nombre = document.getElementById("f-nombre").value.trim();
+    const tipoId = document.getElementById("f-tipoinsumo").value || null;
+    const unidad = document.getElementById("f-unidad").value.trim();
+    const stockMinimo = document.getElementById("f-stockminimo").value;
+    const stockSeguridad = document.getElementById("f-stockseguridad").value || 0;
+    const precioReferencia = document.getElementById("f-precioreferencia").value || 0;
+    if(!nombre) return showToast("Ingresá un nombre");
+    if(await run("editar_insumo", {id, nombre, tipoId, unidad, stockMinimo, stockSeguridad, precioReferencia}, "Insumo actualizado")){ closeModal(); render(); }
+  }
+
+  // ---------- compras ----------
+  function nuevaCompraDraft(){
+    return { proveedorId:"", numeroDocumento:"", fecha: todayISO(), medioPago:(state.mediosPago[0]?state.mediosPago[0].nombre:"Efectivo"), items:[{tipo:"insumo", itemId:"", cantidad:1, precioUnitario:""}] };
+  }
+  function syncCompraDraftFromDOM(){
+    if(!ui.compraDraft) return;
+    const provEl = document.getElementById("f-compra-proveedor");
+    const numdocEl = document.getElementById("f-compra-numdoc");
+    const fechaEl = document.getElementById("f-compra-fecha");
+    const pagoEl = document.getElementById("f-compra-mediopago");
+    if(provEl) ui.compraDraft.proveedorId = provEl.value;
+    if(numdocEl) ui.compraDraft.numeroDocumento = numdocEl.value;
+    if(fechaEl) ui.compraDraft.fecha = fechaEl.value;
+    if(pagoEl) ui.compraDraft.medioPago = pagoEl.value;
+    ui.compraDraft.items.forEach((it, idx)=>{
+      const t = document.getElementById("ci-tipo-"+idx);
+      const i = document.getElementById("ci-item-"+idx);
+      const c = document.getElementById("ci-cantidad-"+idx);
+      const u = document.getElementById("ci-precio-"+idx);
+      if(t) it.tipo = t.value;
+      if(i) it.itemId = i.value;
+      if(c) it.cantidad = c.value;
+      if(u) it.precioUnitario = u.value;
+    });
+  }
+  function addCompraItem(){
+    syncCompraDraftFromDOM();
+    ui.compraDraft.items.push({tipo:"insumo", itemId:"", cantidad:1, precioUnitario:""});
+    render();
+  }
+  function removeCompraItem(idx){
+    syncCompraDraftFromDOM();
+    if(ui.compraDraft.items.length<=1) return;
+    ui.compraDraft.items.splice(idx,1);
+    render();
+  }
+  function onCompraItemTipoChange(idx){
+    syncCompraDraftFromDOM();
+    ui.compraDraft.items[idx].itemId = "";
+    render();
+  }
+  async function submitNuevaCompra(){
+    syncCompraDraftFromDOM();
+    const d = ui.compraDraft;
+    for(const it of d.items){
+      if(!it.itemId) return showToast("Elegí un ítem en todos los renglones");
+      if(!it.cantidad || !it.precioUnitario) return showToast("Completá cantidad y precio unitario en todos los renglones");
+    }
+    const items = d.items.map(it=>{
+      let descripcion = "", unidad = "";
+      if(it.tipo==='insumo'){ const ins = state.insumos.find(x=>x.id==it.itemId); descripcion = ins?ins.nombre:""; unidad = ins?ins.unidad:""; }
+      else { const prod = state.productos.find(x=>x.id==it.itemId); descripcion = prod?prod.nombre:""; unidad = prod?prod.unidadMedida:""; }
+      return { tipo: it.tipo, itemId: it.itemId, descripcion, unidad, cantidad: it.cantidad, precioUnitario: it.precioUnitario };
+    });
+    const r = await run("crear_compra", {proveedorId: d.proveedorId||null, numeroDocumento: d.numeroDocumento, fecha: d.fecha, medioPago: d.medioPago, items}, "Compra registrada");
+    if(r){ ui.compraDraft=null; closeModal(); render(); }
+  }
+  function syncEditCompraDraftFromDOM(){
+    if(!ui.editCompraDraft) return;
+    const d = ui.editCompraDraft;
+    const provEl = document.getElementById("f-editcompra-proveedor");
+    const fechaEl = document.getElementById("f-editcompra-fecha");
+    const numdocEl = document.getElementById("f-editcompra-numdoc");
+    const pagoEl = document.getElementById("f-editcompra-mediopago");
+    if(provEl) d.proveedorId = provEl.value;
+    if(fechaEl) d.fecha = fechaEl.value;
+    if(numdocEl) d.numeroDocumento = numdocEl.value;
+    if(pagoEl) d.medioPago = pagoEl.value;
+    d.items.forEach((it, idx)=>{
+      const c = document.getElementById("eci-cantidad-"+idx);
+      const p = document.getElementById("eci-precio-"+idx);
+      if(c) it.cantidad = c.value;
+      if(p) it.precioUnitario = p.value;
+    });
+  }
+  async function submitEditarCompra(id){
+    syncEditCompraDraftFromDOM();
+    const d = ui.editCompraDraft;
+    if(!d.fecha) return showToast("Elegí una fecha");
+    const data = {
+      id, proveedorId: d.proveedorId||null, fecha: d.fecha, numeroDocumento: d.numeroDocumento, medioPago: d.medioPago,
+      items: d.items.map(it=>({id:it.id, cantidad:it.cantidad, precioUnitario:it.precioUnitario}))
+    };
+    if(await run("editar_compra", data, "Compra actualizada")){ ui.editCompraDraft=null; closeModal(); render(); }
+  }
+  function renderCompraItemRow(it, idx){
+    const opts = it.tipo==='insumo'
+      ? state.insumos.map(i=>`<option value="${i.id}" ${it.itemId==i.id?'selected':''}>${i.nombre}</option>`).join("")
+      : state.productos.map(p=>`<option value="${p.id}" ${it.itemId==p.id?'selected':''}>${p.nombre}</option>`).join("");
+    const subtotal = Number(it.cantidad||0)*Number(it.precioUnitario||0);
+    return `<div class="item-row" style="grid-template-columns:100px 1fr 80px 100px 100px 32px;">
+      <div class="field"><select id="ci-tipo-${idx}" onchange="EuskeraApp.onCompraItemTipoChange(${idx})">
+        <option value="insumo" ${it.tipo==='insumo'?'selected':''}>Insumo</option>
+        <option value="producto" ${it.tipo==='producto'?'selected':''}>Producto</option>
+      </select></div>
+      <div class="field"><select id="ci-item-${idx}">${opts||'<option value="">Sin cargar</option>'}</select></div>
+      <div class="field"><input id="ci-cantidad-${idx}" type="number" value="${it.cantidad}" min="0.01" step="0.01" onchange="EuskeraApp.syncCompraDraftFromDOM();EuskeraApp.render()"></div>
+      <div class="field"><input id="ci-precio-${idx}" type="number" value="${it.precioUnitario}" onchange="EuskeraApp.syncCompraDraftFromDOM();EuskeraApp.render()"></div>
+      <div class="subtotal-box">${fmtMoney(subtotal)}</div>
+      <button class="remove-btn" title="Quitar renglón" onclick="EuskeraApp.removeCompraItem(${idx})" ${idx===0?'style="visibility:hidden;"':''}>✕</button>
+    </div>`;
+  }
+
+  // ---------- remitos ----------
+  function nuevoRemitoDraft(){
+    return { clienteId:"", tipoVenta:"varios", barrilIds:[], fecha: todayISO(), medioPago:(state.mediosPago[0]?state.mediosPago[0].nombre:"Efectivo"), items:[{productoId:"", cantidad:1, precioUnit:""}] };
+  }
+  function syncRemitoDraftFromDOM(){
+    if(!ui.remitoDraft) return;
+    const clienteEl = document.getElementById("f-remito-cliente");
+    const pagoEl = document.getElementById("f-remito-mediopago");
+    const tipoEl = document.getElementById("f-remito-tipoventa");
+    const fechaEl = document.getElementById("f-remito-fecha");
+    if(clienteEl) ui.remitoDraft.clienteId = clienteEl.value;
+    if(pagoEl) ui.remitoDraft.medioPago = pagoEl.value;
+    if(tipoEl) ui.remitoDraft.tipoVenta = tipoEl.value;
+    if(fechaEl) ui.remitoDraft.fecha = fechaEl.value;
+    const barrilChecks = document.querySelectorAll(".remito-barril-check");
+    if(barrilChecks.length){
+      ui.remitoDraft.barrilIds = Array.from(barrilChecks).filter(c=>c.checked).map(c=>c.value);
+    }
+    ui.remitoDraft.items.forEach((it, idx)=>{
+      const p = document.getElementById("ri-producto-"+idx);
+      const c = document.getElementById("ri-cantidad-"+idx);
+      const u = document.getElementById("ri-precio-"+idx);
+      if(p) it.productoId = p.value;
+      if(c) it.cantidad = c.value;
+      if(u) it.precioUnit = u.value;
+    });
+  }
+  function onRemitoTipoVentaChange(){
+    syncRemitoDraftFromDOM();
+    render();
+  }
+  function addRemitoItem(){
+    syncRemitoDraftFromDOM();
+    ui.remitoDraft.items.push({productoId:"", barrilId:"", cantidad:1, precioUnit:""});
+    render();
+  }
+  function removeRemitoItem(idx){
+    syncRemitoDraftFromDOM();
+    if(ui.remitoDraft.items.length<=1) return;
+    ui.remitoDraft.items.splice(idx,1);
+    render();
+  }
+  function onRemitoProductoChange(idx){
+    syncRemitoDraftFromDOM();
+    const it = ui.remitoDraft.items[idx];
+    const prod = state.productos.find(p=>p.id==it.productoId);
+    if(prod){ it.precioUnit = prod.precio; }
+    render();
+  }
+  function onRemitoSubtotalChange(idx){
+    syncRemitoDraftFromDOM();
+    const it = ui.remitoDraft.items[idx];
+    const subtotalEl = document.getElementById("ri-subtotal-"+idx);
+    const cantidad = Number(it.cantidad || 0);
+    const nuevoSubtotal = Number(subtotalEl.value || 0);
+    it.precioUnit = cantidad > 0 ? (nuevoSubtotal / cantidad) : 0;
+    render();
+  }
+  async function submitNuevoRemito(){
+    syncRemitoDraftFromDOM();
+    const d = ui.remitoDraft;
+    if(!d.clienteId) return showToast("Elegí un cliente");
+    if(!d.tipoVenta) return showToast("Elegí el tipo de venta");
+    if(d.tipoVenta==='granel' && d.barrilIds.length===0) return showToast("Elegí al menos un barril para la venta a granel");
+    for(const it of d.items){
+      if(!it.productoId) return showToast("Elegí un producto en todos los renglones");
+      const prod = state.productos.find(p=>p.id==it.productoId);
+      if(prod && Number(prod.stock) < Number(it.cantidad||0)){
+        return showToast(`No hay stock suficiente de "${prod.nombre}" (disponible: ${fmtQty(prod.stock)}, pedido: ${it.cantidad}).`);
+      }
+    }
+    const items = d.items.map(it=>{
+      const prod = state.productos.find(p=>p.id==it.productoId);
+      return { productoId: it.productoId, cantidad: it.cantidad, precioUnit: it.precioUnit, descripcion: prod ? prod.nombre : "" };
+    });
+    const r = await run("crear_remito", {clienteId: d.clienteId, tipoVenta: d.tipoVenta, barrilIds: d.barrilIds, fecha: d.fecha, medioPago: d.medioPago, items}, "Remito generado");
+    if(r){
+      ui.remitoDraft=null;
+      ui.remitoGenerado = { id: r.remitoId, numero: r.numero };
+      openModal('remitoGenerado');
+    }
+  }
+
+  async function submitEditarRemito(id){
+    const tipoVenta = document.getElementById("f-editremito-tipoventa").value;
+    const fecha = document.getElementById("f-editremito-fecha").value;
+    const medioPago = document.getElementById("f-editremito-mediopago").value;
+    if(!fecha) return showToast("Elegí una fecha");
+    if(await run("editar_remito", {id, tipoVenta, fecha, medioPago}, "Remito actualizado")){ closeModal(); render(); }
+  }
+
+  // ---------- UI ----------
+  function formatCuitInput(el){
+    let v = el.value.replace(/\D/g,'').slice(0,11);
+    let out = v;
+    if(v.length>2) out = v.slice(0,2)+'-'+v.slice(2);
+    if(v.length>10) out = v.slice(0,2)+'-'+v.slice(2,10)+'-'+v.slice(10);
+    el.value = out;
+  }
+  function formatDocInput(el){
+    let v = el.value.replace(/\D/g,'').slice(0,12);
+    let out = v;
+    if(v.length>4) out = v.slice(0,4)+'-'+v.slice(4);
+    el.value = out;
+  }
+  async function submitNuevoContactoCliente(clienteId){
+    const nombre = document.getElementById("f-nombre").value.trim();
+    const telefono = document.getElementById("f-telefono").value.trim();
+    const mail = document.getElementById("f-mail").value.trim();
+    if(!nombre) return showToast("Ingresá un nombre");
+    if(await run("add_contacto_cliente", {clienteId, nombre, telefono, mail}, "Contacto agregado")){ openModal('detalleCliente', clienteId); }
+  }
+  async function submitNuevoContactoProveedor(proveedorId){
+    const nombre = document.getElementById("f-nombre").value.trim();
+    const telefono = document.getElementById("f-telefono").value.trim();
+    const mail = document.getElementById("f-mail").value.trim();
+    if(!nombre) return showToast("Ingresá un nombre");
+    if(await run("add_contacto_proveedor", {proveedorId, nombre, telefono, mail}, "Contacto agregado")){ openModal('detalleProveedor', proveedorId); }
+  }
+  async function submitPagoCC(clienteId){
+    const monto = document.getElementById("f-pagocc-monto").value;
+    const fecha = document.getElementById("f-pagocc-fecha").value;
+    const medioPago = document.getElementById("f-pagocc-mediopago").value;
+    if(!monto || Number(monto)<=0) return showToast("Ingresá un monto válido");
+    if(!fecha) return showToast("Elegí una fecha");
+    if(await run("registrar_pago_cc", {clienteId, monto, fecha, medioPago}, "Pago registrado")){ openModal('verCuenta', clienteId); }
+  }
+  async function eliminarPagoCC(id, clienteId){
+    if(await run("eliminar_pago_cc", {id}, "Pago eliminado")){ openModal('verCuenta', clienteId); }
+  }
+  async function abrirKardex(itemTipo, itemId, nombre){
+    ui.kardexData = {itemTipo, itemId, nombre, movimientos: null};
+    openModal('kardex');
+    try{
+      const r = await api("get_kardex", {itemTipo, itemId});
+      if(r.ok){ ui.kardexData.movimientos = r.movimientos; render(); }
+      else { showToast(r.error || "No se pudo cargar el kardex"); }
+    }catch(e){ console.error(e); showToast("No se pudo conectar con el servidor."); }
+  }
+  const tipoMovLabel = {venta:"Venta", compra:"Compra", ajuste:"Ajuste manual", anulacion_venta:"Anulación de venta", anulacion_compra:"Anulación de compra", edicion:"Edición"};
+
+  // ---------- producción ----------
+  function nuevoLoteDraft(){
+    return { productoId:"", litrosObjetivo:"", fecha: todayISO(), notas:"", items:[{insumoId:"", cantidad:""}] };
+  }
+  function syncLoteDraftFromDOM(){
+    if(!ui.loteDraft) return;
+    const p = document.getElementById("f-lote-producto");
+    const l = document.getElementById("f-lote-litros");
+    const f = document.getElementById("f-lote-fecha");
+    const n = document.getElementById("f-lote-notas");
+    if(p) ui.loteDraft.productoId = p.value;
+    if(l) ui.loteDraft.litrosObjetivo = l.value;
+    if(f) ui.loteDraft.fecha = f.value;
+    if(n) ui.loteDraft.notas = n.value;
+    ui.loteDraft.items.forEach((it,idx)=>{
+      const i = document.getElementById("li-insumo-"+idx);
+      const c = document.getElementById("li-cantidad-"+idx);
+      if(i) it.insumoId = i.value;
+      if(c) it.cantidad = c.value;
+    });
+  }
+  function onLoteProductoChange(){
+    syncLoteDraftFromDOM();
+    const receta = state.recetas.find(r=>String(r.productoId)===String(ui.loteDraft.productoId));
+    if(receta && ui.loteDraft.litrosObjetivo){
+      const factor = Number(ui.loteDraft.litrosObjetivo) / Number(receta.litrosBase);
+      ui.loteDraft.items = receta.items.map(it=>({insumoId:String(it.insumoId), cantidad: (Number(it.cantidad)*factor).toFixed(3)}));
+      showToast("Insumos sugeridos según la receta");
+    }
+    render();
+  }
+  function onLoteLitrosChange(){ onLoteProductoChange(); }
+  function addLoteItem(){ syncLoteDraftFromDOM(); ui.loteDraft.items.push({insumoId:"",cantidad:""}); render(); }
+  function removeLoteItem(idx){ syncLoteDraftFromDOM(); if(ui.loteDraft.items.length<=1) return; ui.loteDraft.items.splice(idx,1); render(); }
+  async function submitNuevoLote(){
+    syncLoteDraftFromDOM();
+    const d = ui.loteDraft;
+    if(!d.productoId) return showToast("Elegí qué cerveza vas a producir");
+    if(!d.litrosObjetivo || Number(d.litrosObjetivo)<=0) return showToast("Ingresá los litros objetivo");
+    const consumos = d.items.filter(it=>it.insumoId && it.cantidad).map(it=>({insumoId:it.insumoId, cantidad:it.cantidad}));
+    if(consumos.length===0) return showToast("Agregá al menos un insumo consumido");
+    const r = await run("crear_lote_produccion", {productoId:d.productoId, litrosObjetivo:d.litrosObjetivo, fecha:d.fecha, notas:d.notas, consumos}, "Lote de producción creado");
+    if(r){
+      ui.loteDraft = null; closeModal(); render();
+      if(r.avisoStockInsuficiente && r.avisoStockInsuficiente.length){
+        showToast("Ojo: faltó stock de " + r.avisoStockInsuficiente.join(", "));
+      }
+    }
+  }
+  async function pasarAFermentacion(id){
+    if(await run("pasar_a_fermentacion", {id, fecha: todayISO()}, "Lote pasado a fermentación")) render();
+  }
+  async function pasarAMaduracion(id){
+    if(await run("pasar_a_maduracion", {id, fecha: todayISO()}, "Lote pasado a maduración")) render();
+  }
+  async function submitMarcarFermentado(id){
+    const litrosReales = document.getElementById("f-litrosreales").value;
+    if(!litrosReales || Number(litrosReales)<=0) return showToast("Ingresá los litros reales obtenidos");
+    if(await run("marcar_listo", {id, litrosReales, fecha: todayISO()}, "Lote pasado a stock")){ closeModal(); render(); }
+  }
+
+  function nuevaRecetaDraft(receta){
+    if(receta){
+      return { id:receta.id, productoId:String(receta.productoId), nombre:receta.nombre, litrosBase:String(receta.litrosBase),
+        items: (receta.items||[]).map(it=>({insumoId:String(it.insumoId), cantidad:String(it.cantidad)})) };
+    }
+    return { id:null, productoId:"", nombre:"", litrosBase:"100", items:[{insumoId:"", cantidad:""}] };
+  }
+  function syncRecetaDraftFromDOM(){
+    if(!ui.recetaDraft) return;
+    const p = document.getElementById("f-receta-producto");
+    const n = document.getElementById("f-receta-nombre");
+    const l = document.getElementById("f-receta-litrosbase");
+    if(p) ui.recetaDraft.productoId = p.value;
+    if(n) ui.recetaDraft.nombre = n.value;
+    if(l) ui.recetaDraft.litrosBase = l.value;
+    ui.recetaDraft.items.forEach((it,idx)=>{
+      const i = document.getElementById("ri2-insumo-"+idx);
+      const c = document.getElementById("ri2-cantidad-"+idx);
+      if(i) it.insumoId = i.value;
+      if(c) it.cantidad = c.value;
+    });
+  }
+  function addRecetaItem(){ syncRecetaDraftFromDOM(); ui.recetaDraft.items.push({insumoId:"",cantidad:""}); render(); }
+  function removeRecetaItem(idx){ syncRecetaDraftFromDOM(); if(ui.recetaDraft.items.length<=1) return; ui.recetaDraft.items.splice(idx,1); render(); }
+  async function submitNuevaReceta(){
+    syncRecetaDraftFromDOM();
+    const d = ui.recetaDraft;
+    if(!d.productoId) return showToast("Elegí la cerveza");
+    if(!d.nombre.trim()) return showToast("Ingresá un nombre para la receta");
+    if(!d.litrosBase || Number(d.litrosBase)<=0) return showToast("Ingresá los litros base");
+    const items = d.items.filter(it=>it.insumoId && it.cantidad).map(it=>({insumoId:it.insumoId, cantidad:it.cantidad}));
+    if(items.length===0) return showToast("Agregá al menos un insumo");
+    const action = d.id ? "editar_receta" : "add_receta";
+    const payload = d.id ? {id:d.id, productoId:d.productoId, nombre:d.nombre, litrosBase:d.litrosBase, items} : {productoId:d.productoId, nombre:d.nombre, litrosBase:d.litrosBase, items};
+    if(await run(action, payload, d.id?"Receta actualizada":"Receta guardada")){ ui.recetaDraft=null; closeModal(); render(); }
+  }
+
+  function pillFor(estado){
+    const label = {planta:"En planta", entregado:"Entregado", atrasado:"Atrasado"}[estado] || estado;
+    return `<span class="pill ${estado}"><span class="keg ${estado}"></span>${label}</span>`;
+  }
+
+  function renderLogin(){
+    return `
+      <div class="euskera-app" style="width:100%;align-items:center;justify-content:center;">
+        <div class="card" style="width:100%;max-width:320px;padding:28px 26px;text-align:center;">
+          <img src="logo_panel.png" alt="Euskera" style="width:110px;height:110px;object-fit:contain;margin-bottom:8px;">
+          <div class="stencil" style="font-size:20px;margin-bottom:2px;">EUSKERA</div>
+          <div style="font-size:11px;color:var(--copper-300);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:20px;">Panel de control — Acceso</div>
+          <div class="field" style="text-align:left;"><label>Usuario</label><input id="f-user" placeholder="gabriel / mariano"></div>
+          <div class="field" style="text-align:left;"><label>Contraseña</label><input id="f-pass" type="password" onkeydown="if(event.key==='Enter')EuskeraApp.intentarLogin()"></div>
+          ${ui.loginError ? `<div style="color:var(--rust-600);font-size:12px;margin-bottom:12px;">${ui.loginError}</div>` : ""}
+          <div style="text-align:center;"><button class="btn" style="width:auto;min-width:140px;" onclick="EuskeraApp.intentarLogin()">Ingresar</button></div>
+        </div>
+      </div>`;
+  }
+
+  function renderSidebar(){
+    const btn = (id,label,ico) => `<button class="${ui.tab===id?'active':''}" onclick="EuskeraApp.setTab('${id}')">${ico?`<span class="ico">${ico}</span>`:''}${label}</button>`;
+    return `
+      <div class="sidebar ${ui.sidebarOpen?'open':''}">
+        <div class="brand"><img src="logo_panel.png" alt="Euskera"><div><div class="name stencil">EUSKERA</div><div class="sub">Panel de Control</div></div></div>
+        <div class="nav">
+          ${btn('dashboard','Dashboard','◆')}
+          <div class="nav-group-label">Ventas</div>
+          <div class="nav-group">${btn('ventas','Ventas','₿')}${btn('clientes','Alta Clientes','☺')}${btn('cuentascorrientes','Cuentas Corrientes','⎘')}</div>
+          <div class="nav-group-label">Compras</div>
+          <div class="nav-group">${btn('compras','Compras','⇩')}${btn('proveedores','Alta de Proveedores','⚑')}${btn('gastos','Gastos Generales','▦')}</div>
+          <div class="nav-group-label">Producción</div>
+          <div class="nav-group">${btn('produccion','Lotes de Producción','⚗')}${btn('recetas','Recetas','▧')}</div>
+          <div class="nav-group-label">Informes</div>
+          <div class="nav-group">${btn('dashventas','Dash Ventas','▥')}${btn('dashcompras','Dash Compras','▥')}${btn('balancemensual','Balance Mensual','⎘')}${btn('ajustes','Ajustes','☰')}</div>
+          <div class="nav-group-label">Altas</div>
+          <div class="nav-group">${btn('productos','Productos','▤')}${btn('insumos','Insumos','⚙')}${btn('barriles','Barriles','⛁')}${btn('mediospago','Medios de Pago','◈')}${btn('tiposinsumo','Tipo Insumos','◆')}${btn('categoriasgasto','Categorías de Gasto','◆')}</div>
+        </div>
+        <div class="sidebar-foot">Conectado como <strong style="color:var(--copper-300);">${ui.auth.nombre}</strong>.<br><button class="btn ghost small" style="margin-top:8px;" onclick="EuskeraApp.logout()">Cerrar sesión</button></div>
+      </div>`;
+  }
+
+  function renderTopbar(title){
+    const d = new Date().toLocaleDateString("es-AR",{weekday:"long", day:"numeric", month:"long"});
+    return `<div class="topbar"><h1 class="stencil">${title}</h1><div class="date">${d}</div></div>`;
+  }
+
+  function filasLitros(remitosMes){
+    let total = 0;
+    remitosMes.forEach(r=>{
+      (r.items||[]).forEach(it=>{
+        const prod = state.productos.find(p=>p.id==it.productoId);
+        if(prod && prod.unidadMedida==='litros') total += Number(it.cantidad);
+      });
+    });
+    return total;
+  }
+
+  function segmentado(remitosMes, tipo){
+    const remitosTipo = remitosMes.filter(r=>r.tipoVenta===tipo);
+    let litros = 0;
+    remitosTipo.forEach(r=>{
+      (r.items||[]).forEach(it=>{
+        const prod = state.productos.find(p=>p.id==it.productoId);
+        if(prod && prod.tipo==='granel' && prod.unidadMedida==='litros') litros += Number(it.cantidad);
+      });
+    });
+    return {litros, cantidadRemitos: remitosTipo.length};
+  }
+
+  function renderDashboard(){
+    const remitosMes = state.remitos.filter(r=>isThisMonth(r.fecha));
+    const totalMes = remitosMes.reduce((s,r)=>s+Number(r.total),0);
+
+    const porProducto = {};
+    remitosMes.forEach(r=>{
+      (r.items||[]).forEach(it=>{
+        if(!it.productoId) return;
+        if(!porProducto[it.productoId]) porProducto[it.productoId] = {nombre:it.descripcion, cantidad:0, total:0};
+        porProducto[it.productoId].cantidad += Number(it.cantidad);
+        porProducto[it.productoId].total += Number(it.cantidad)*Number(it.precioUnit);
+      });
+    });
+
+    let html = renderTopbar("Dashboard");
+    const litrosVendidos = filasLitros(remitosMes);
+    const litrosStock = state.productos.filter(p=>p.tipo==='granel' && p.unidadMedida==='litros').reduce((s,p)=>s+Number(p.stock),0);
+    const litrosFermentando = state.lotesProduccion.filter(l=>l.estado==='fermentando').reduce((s,l)=>s+Number(l.litrosObjetivo),0);
+    const litrosMadurando = state.lotesProduccion.filter(l=>l.estado==='madurando').reduce((s,l)=>s+Number(l.litrosObjetivo),0);
+    html += `<div class="kpis" style="align-items:stretch;">
+      <div class="card kpi"><div class="label">Ventas del mes</div><div class="value copper">${fmtMoney(totalMes)}</div></div>
+      <div class="card kpi"><div class="label">Litros vendidos este mes</div><div class="value green">${fmtQty(litrosVendidos)} Lts.</div></div>
+      <div style="width:1px;background:var(--foam-faint);align-self:stretch;margin:4px 2px;"></div>
+      <div class="card kpi-sm" style="align-self:flex-start;"><div class="label">Stock</div><div class="value">${fmtQty(litrosStock)} Lts.</div></div>
+      <div class="card kpi-sm" style="align-self:flex-start;"><div class="label">Fermentación</div><div class="value" style="color:var(--copper-300);">${fmtQty(litrosFermentando)} Lts.</div></div>
+      <div class="card kpi-sm" style="align-self:flex-start;"><div class="label">Maduración</div><div class="value" style="color:#9FD8AE;">${fmtQty(litrosMadurando)} Lts.</div></div>
+    </div>`;
+
+    html += `<div class="section-title first">Productos vendidos este mes</div>`;
+    const filas = Object.keys(porProducto).map(pid=>({pid, ...porProducto[pid]}));
+    {
+      const esGranelProd = f => { const prod = state.productos.find(p=>p.id==f.pid); return prod && prod.tipo==='granel'; };
+      let granelFilas = filas.filter(esGranelProd).sort((a,b)=>b.cantidad-a.cantidad);
+      const otrasFilas = filas.filter(f=>!esGranelProd(f)).sort((a,b)=>b.total-a.total);
+
+      // completar hasta 4 tarjetas con productos Granel del catálogo que no tuvieron ventas este mes
+      const yaIncluidos = new Set(granelFilas.map(f=>String(f.pid)));
+      const catalogoGranelRestante = state.productos.filter(p=>p.tipo==='granel' && !yaIncluidos.has(String(p.id)));
+      let i = 0;
+      while(granelFilas.length<4 && i<catalogoGranelRestante.length){
+        const p = catalogoGranelRestante[i];
+        granelFilas.push({pid:p.id, nombre:p.nombre, cantidad:0, total:0});
+        i++;
+      }
+
+      const destacados = granelFilas.slice(0,4);
+      const resto = granelFilas.slice(4).concat(otrasFilas);
+      const granelData = segmentado(remitosMes,'granel');
+      const recargaData = segmentado(remitosMes,'recarga');
+      html += `<div class="dash-cols">`;
+      html += `<div class="dash-left">`;
+      html += `<div class="prod-cards">`;
+      if(destacados.length===0){
+        html += `<div class="empty" style="grid-column:1/-1;">Todavía no hay productos tipo Granel cargados en el catálogo.</div>`;
+      }
+      destacados.forEach(f=>{
+        const prod = state.productos.find(p=>p.id==f.pid);
+        const esLitros = prod && prod.unidadMedida==='litros';
+        const cantidadTxt = (esLitros ? fmtQty(f.cantidad) : f.cantidad) + (esLitros ? ' Lts.' : '');
+        const stockTxt = (esLitros ? fmtQty(prod?prod.stock:0) : (prod?prod.stock:"—")) + (esLitros ? ' Lts.' : '');
+
+        const loteActivo = state.lotesProduccion.filter(l=>l.estado!=='terminado' && String(l.productoId)===String(f.pid)).sort((a,b)=>b.id-a.id)[0];
+        const ultimaProd = state.lotesProduccion.filter(l=>l.estado==='terminado' && String(l.productoId)===String(f.pid)).sort((a,b)=>b.id-a.id)[0];
+        let prodLineas;
+        if(loteActivo){
+          prodLineas = `Última Producción: ${fmtDate(loteActivo.fechaCoccion)}<br>Estado: ${estadoLoteLabel[loteActivo.estado]}`;
+        } else if(ultimaProd){
+          prodLineas = `Última producción: ${fmtQty(ultimaProd.litrosReales)} Lts. — ${fmtDate(ultimaProd.fechaTerminado)}`;
+        } else {
+          prodLineas = `Última producción: sin datos todavía`;
+        }
+
+        html += `<div class="prod-card">
+          <div class="nombre">${f.nombre}</div>
+          <div class="cantidad">${cantidadTxt}</div>
+          <div class="sub">Stock remanente: <strong>${stockTxt}</strong><br>${prodLineas}</div>
+        </div>`;
+      });
+      html += `</div>`;
+      html += `<div class="segment-cards">
+        <div class="segment-card granel">
+          <div class="nombre">Granel</div>
+          <div class="cantidad">${fmtQty(granelData.litros)} Lts.</div>
+        </div>
+        <div class="segment-card recarga">
+          <div class="nombre">Recargas</div>
+          <div class="cantidad">${fmtQty(recargaData.litros)} Lts.</div>
+          <div class="sub">${recargaData.cantidadRemitos.toLocaleString("es-AR")} recargas</div>
+        </div>
+      </div>`;
+      html += `</div>`;
+      html += `<table><thead><tr><th>Producto</th><th>Cantidad</th><th>Total</th><th>Stock</th></tr></thead><tbody>`;
+      if(resto.length===0){
+        html += `<tr><td colspan="4" style="color:var(--foam-dim);text-align:center;padding:18px;">No hay más productos vendidos este mes.</td></tr>`;
+      }
+      resto.forEach(f=>{
+        const prod = state.productos.find(p=>p.id==f.pid);
+        const esLitros = prod && prod.unidadMedida==='litros';
+        const cantTxt = esLitros ? fmtQty(f.cantidad) : f.cantidad;
+        const stockTxt = esLitros ? fmtQty(prod?prod.stock:0) : (prod?prod.stock:"—");
+        html += `<tr><td>${f.nombre}</td><td class="mono">${cantTxt}</td><td class="mono num">${fmtMoney(f.total)}</td><td class="mono num">${stockTxt}</td></tr>`;
+      });
+      html += `</tbody></table>`;
+      html += `</div>`;
+    }
+
+    html += `<div class="section-title">Movimientos de barriles</div>`;
+    const fuera = state.barriles.filter(b=>barrilEstado(b)!=="planta");
+    if(fuera.length===0){ html += `<div class="empty">No hay barriles entregados en este momento.</div>`; }
+    else {
+      html += `<table><thead><tr><th></th><th>Barril</th><th>Cliente</th><th>Entregado</th><th>Días fuera</th><th>Estado</th></tr></thead><tbody>`;
+      fuera.forEach(b=>{
+        const est = barrilEstado(b);
+        const expanded = ui.expandedBarril===b.id;
+        html += `<tr class="clickable" onclick="EuskeraApp.toggleBarrilExpand('${b.id}')">
+          <td class="mono" style="width:16px;">${expanded?'▾':'▸'}</td>
+          <td class="mono">${b.id}${b.descripcion?' · '+b.descripcion:''}</td>
+          <td>${b.clienteNombre||"—"}</td><td>${fmtDate(b.fechaEntrega)}</td><td>${daysSince(b.fechaEntrega)}</td><td>${pillFor(est)}</td>
+        </tr>`;
+        if(expanded){
+          html += `<tr class="expand-row"><td colspan="6">`;
+          if(!b.movimientos || b.movimientos.length===0){ html += `<span style="color:var(--foam-dim);">Sin movimientos registrados.</span>`; }
+          else {
+            html += `<table><thead><tr><th>Fecha</th><th>Acción</th><th>Cliente</th></tr></thead><tbody>`;
+            b.movimientos.slice().reverse().forEach(m=>{
+              html += `<tr><td class="mono">${fmtDate(m.fecha)}</td><td class="mono">${m.accion}</td><td>${m.clienteNombre||"—"}</td></tr>`;
+            });
+            html += `</tbody></table>`;
+          }
+          html += `</td></tr>`;
+        }
+      });
+      html += `</tbody></table>`;
+    }
+    return html;
+  }
+
+  function renderBarriles(){
+    let html = renderTopbar("Barriles");
+    const enPlanta = state.barriles.filter(b=>barrilEstado(b)==='planta').length;
+    const entregados = state.barriles.filter(b=>barrilEstado(b)!=='planta').length;
+    html += `<div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+      <button class="btn" onclick="EuskeraApp.openModal('nuevoBarril')">+ Nuevo barril</button>
+      <div class="kpis-sm" style="margin-bottom:0;">
+        <div class="card kpi-sm"><div class="label">En planta</div><div class="value green">${enPlanta}</div></div>
+        <div class="card kpi-sm"><div class="label">Entregados</div><div class="value copper">${entregados}</div></div>
+      </div>
+    </div>`;
+    if(state.barriles.length===0){ html += `<div class="empty">Todavía no cargaste ningún barril.</div>`; }
+    else {
+      html += `<table><thead><tr><th>ID</th><th>Descripción</th><th>Litros</th><th>Estado</th><th>Cliente</th><th>Entregado</th><th>QR</th><th></th></tr></thead><tbody>`;
+      state.barriles.forEach(b=>{
+        const est = barrilEstado(b);
+        html += `<tr>
+          <td class="mono">${b.id}</td><td>${b.descripcion||"—"}</td><td class="mono">${b.litros}L</td><td>${pillFor(est)}</td>
+          <td>${b.clienteNombre||"—"}</td><td>${b.fechaEntrega?fmtDate(b.fechaEntrega):"—"}</td>
+          <td><button class="btn ghost small" onclick="EuskeraApp.openModal('qr','${b.id}')">Ver QR</button></td>
+          <td class="row-actions">
+            <button class="btn ghost small" onclick="EuskeraApp.openModal('editarBarril','${b.id}')">Modificar</button>
+            ${est==="planta" ? `<button class="btn small" onclick="EuskeraApp.openModal('entregarBarril','${b.id}')">Entregar</button>` :
+              `<button class="btn small" onclick="EuskeraApp.devolverBarril('${b.id}')">Marcar devuelto</button>`}
+            <button class="btn ghost small danger" onclick="EuskeraApp.confirmarEliminar('barril','${b.id}','el barril ${b.id}')">Eliminar</button>
+          </td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+    return html;
+  }
+
+  function renderProductos(){
+    let html = renderTopbar("Productos");
+    html += `<div style="margin-bottom:16px;"><button class="btn" onclick="EuskeraApp.openModal('nuevoProducto')">+ Nuevo producto</button></div>`;
+    if(state.productos.length===0){ html += `<div class="empty">No hay productos cargados.</div>`; }
+    else {
+      html += `<table><thead><tr><th>Código</th><th>Producto</th><th>Tipo</th><th>Unidad</th><th>Precio</th><th>Stock</th><th>Mínimo</th><th>Seguridad</th><th></th></tr></thead><tbody>`;
+      state.productos.forEach(p=>{
+        const stockTxt = p.unidadMedida==='litros' ? fmtQty(p.stock) : p.stock;
+        const bajoSeguridad = Number(p.stockSeguridad)>0 && Number(p.stock) < Number(p.stockSeguridad);
+        html += `<tr>
+          <td class="mono">${p.codProd||"—"}</td><td>${p.nombre}</td><td class="mono">${cap(p.tipo)}</td><td class="mono">${cap(p.unidadMedida)}</td>
+          <td class="mono num">${fmtMoney(p.precio)}</td><td class="mono num" ${bajoSeguridad?'style="color:var(--rust-600);font-weight:800;"':''}>${stockTxt}</td>
+          <td class="mono num">${p.stockMinimo}</td><td class="mono num">${p.stockSeguridad}</td>
+          <td class="row-actions">
+            <button class="btn ghost small" onclick="EuskeraApp.ajustarStockProducto(${p.id},1)">+1</button>
+            <button class="btn ghost small" onclick="EuskeraApp.ajustarStockProducto(${p.id},-1)">-1</button>
+            <button class="btn small" onclick="EuskeraApp.openModal('editarProducto',${p.id})">Editar</button>
+            <button class="btn ghost small" onclick="EuskeraApp.abrirKardex('producto',${p.id},'${p.nombre.replace(/'/g,"")}')">Kardex</button>
+          </td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+    return html;
+  }
+
+  function renderInsumos(){
+    let html = renderTopbar("Insumos");
+    html += `<div style="margin-bottom:16px;"><button class="btn" onclick="EuskeraApp.openModal('nuevoInsumo')">+ Nuevo insumo</button></div>`;
+    if(state.insumos.length===0){ html += `<div class="empty">No hay insumos cargados.</div>`; }
+    else {
+      const valorTotal = state.insumos.reduce((s,i)=>s+Number(i.valorStock||0),0);
+      html += `<div class="card" style="margin-bottom:16px;display:inline-block;"><div class="label" style="font-size:12.5px;color:var(--foam-dim);text-transform:uppercase;">Valor total del stock</div><div style="font-size:20px;margin-top:4px;">${fmtMoney(valorTotal)}</div></div>`;
+      html += `<table><thead><tr><th>Insumo</th><th>Tipo</th><th>Stock</th><th>Mínimo</th><th>Seguridad</th><th>Valorizado</th><th></th><th></th><th></th></tr></thead><tbody>`;
+      state.insumos.forEach(i=>{
+        const bajoSeguridad = Number(i.stock) < Number(i.stockSeguridad);
+        html += `<tr>
+          <td>${i.nombre}</td><td class="mono">${i.tipoNombre||"—"}</td>
+          <td class="mono num" ${bajoSeguridad?'style="color:var(--rust-600);font-weight:800;"':''}>${i.stock} ${i.unidad}</td>
+          <td class="mono num">${i.stockMinimo} ${i.unidad}</td><td class="mono num">${i.stockSeguridad} ${i.unidad}</td>
+          <td class="mono num">${fmtMoney3(i.valorStock)}</td>
+          <td><button class="btn small" onclick="EuskeraApp.openModal('detalleInsumo',${i.id})">Ver detalle</button></td>
+          <td><button class="btn ghost small" onclick="EuskeraApp.openModal('editarInsumo',${i.id})">Editar</button></td>
+          <td><button class="btn ghost small" onclick="EuskeraApp.abrirKardex('insumo',${i.id},'${i.nombre.replace(/'/g,"")}')">Kardex</button></td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+    return html;
+  }
+
+  function renderProveedores(){
+    let html = renderTopbar("Proveedores");
+    html += `<div style="margin-bottom:16px;"><button class="btn" onclick="EuskeraApp.openModal('nuevoProveedor')">+ Nuevo proveedor</button></div>`;
+    if(state.proveedores.length===0){ html += `<div class="empty">No hay proveedores cargados.</div>`; }
+    else {
+      html += `<table><thead><tr><th>Nombre</th><th>CUIT</th><th>Contacto</th><th>Teléfono</th><th>Dirección</th><th>Localidad</th><th>CP</th><th>Provincia</th><th></th><th></th></tr></thead><tbody>`;
+      state.proveedores.forEach(p=>{
+        html += `<tr><td>${p.nombre}</td><td class="mono">${p.cuit||"—"}</td><td>${p.contacto||"—"}</td><td class="mono">${p.telefono||"—"}</td><td>${p.direccion||"—"}</td><td>${p.localidad||"—"}</td><td class="mono">${p.cp||"—"}</td><td>${p.provincia||"—"}</td>
+          <td><button class="btn small" onclick="EuskeraApp.openModal('detalleProveedor',${p.id})">Ver detalle</button></td>
+          <td><button class="btn ghost small" onclick="EuskeraApp.openModal('editarProveedor',${p.id})">Editar</button></td></tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+    return html;
+  }
+
+  function renderClientes(){
+    let html = renderTopbar("Clientes");
+    html += `<div style="margin-bottom:16px;"><button class="btn" onclick="EuskeraApp.openModal('nuevoCliente')">+ Nuevo cliente</button></div>`;
+    if(state.clientes.length===0){ html += `<div class="empty">No hay clientes cargados todavía.</div>`; }
+    else {
+      html += `<table><thead><tr><th>Nombre</th><th>Razón social</th><th>CUIT</th><th>Dirección</th><th>Localidad</th><th>CP</th><th>Provincia</th><th>Teléfono</th><th></th><th></th></tr></thead><tbody>`;
+      state.clientes.forEach(c=>{
+        html += `<tr><td>${c.nombre}</td><td>${c.razonSocial||"—"}</td><td class="mono">${c.cuit||"—"}</td><td>${c.direccion||"—"}</td><td>${c.localidad||"—"}</td><td class="mono">${c.cp||"—"}</td><td>${c.provincia||"—"}</td><td class="mono">${c.telefono||"—"}</td>
+          <td><button class="btn small" onclick="EuskeraApp.openModal('detalleCliente',${c.id})">Ver detalle</button></td>
+          <td><button class="btn ghost small" onclick="EuskeraApp.openModal('editarCliente',${c.id})">Editar</button></td></tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+    return html;
+  }
+
+  function renderVentas(){
+    let html = renderTopbar("Ventas");
+    html += `<div style="margin-bottom:16px;"><button class="btn" onclick="EuskeraApp.openModal('nuevoRemito')">+ Nueva Venta</button></div>`;
+    if(state.remitos.length===0){ html += `<div class="empty">Todavía no generaste ninguna venta.</div>`; }
+    else {
+      const total = state.remitos.reduce((s,r)=>s+Number(r.total),0);
+      html += `<div class="card" style="margin-bottom:16px;display:inline-block;"><div class="label" style="font-size:12.5px;color:var(--foam-dim);text-transform:uppercase;">Total histórico</div><div style="font-size:20px;margin-top:4px;">${fmtMoney(total)}</div></div>`;
+      html += `<table><thead><tr><th>N° Remito</th><th>Fecha</th><th>Cliente</th><th>Tipo de Venta</th><th>Total</th><th>Pago</th><th></th><th></th><th></th><th></th></tr></thead><tbody>`;
+      state.remitos.forEach(r=>{
+        html += `<tr><td class="mono">${r.numero}</td><td class="mono">${fmtDate(r.fecha)}</td><td>${r.clienteNombre}</td><td class="mono">${cap(r.tipoVenta)}</td><td class="mono num">${fmtMoney(r.total)}</td><td class="mono">${r.medioPago}</td>
+          <td><button class="btn small" onclick="EuskeraApp.openModal('detalleRemito',${r.id})">Ver detalle</button></td>
+          <td><a class="btn ghost small" href="remito_pdf.php?id=${r.id}" target="_blank" style="text-decoration:none;display:inline-block;">Ver PDF</a></td>
+          <td><button class="btn ghost small" onclick="EuskeraApp.openModal('editarRemito',${r.id})">Editar</button></td>
+          <td><button class="btn ghost small danger" onclick="EuskeraApp.confirmarEliminar('remito',${r.id},'el remito ${r.numero}')">Eliminar</button></td></tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+    return html;
+  }
+
+  function buildMonthlyBuckets(n){
+    const out = []; const now = new Date();
+    for(let i=n-1;i>=0;i--){
+      const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+      const key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+      const label = d.toLocaleDateString('es-AR',{month:'short',year:'2-digit'});
+      out.push({key, label});
+    }
+    return out;
+  }
+  function segmentadoMes(mesKey, tipo){
+    let litros = 0;
+    state.remitos.filter(r=>r.fecha.slice(0,7)===mesKey && r.tipoVenta===tipo).forEach(r=>{
+      (r.items||[]).forEach(it=>{
+        const prod = state.productos.find(p=>p.id==it.productoId);
+        if(prod && prod.tipo==='granel' && prod.unidadMedida==='litros') litros += Number(it.cantidad);
+      });
+    });
+    return litros;
+  }
+  function exportCSV(filename, headers, rows){
+    let csv = headers.join(',') + '\n';
+    rows.forEach(r=>{ csv += r.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',') + '\n'; });
+    const blob = new Blob(["\ufeff"+csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }
+  function setInformesRango(n){ ui.informesRango = Number(n); render(); }
+  function setInformesQuery(campo, valor){ ui.informes[campo] = valor; render(); }
+
+  function asignarPagosFIFO(remitos, totalPagado){
+    const ordenados = [...remitos].sort((a,b)=> a.fecha<b.fecha?-1 : a.fecha>b.fecha?1 : (a.id-b.id));
+    let restante = totalPagado;
+    return ordenados.map(r=>{
+      const total = Number(r.total);
+      const cubierto = Math.min(total, Math.max(0, restante));
+      restante -= cubierto;
+      let estadoPago = 'Pendiente';
+      if(cubierto >= total - 0.005) estadoPago = 'Pagado';
+      else if(cubierto > 0) estadoPago = 'Parcial';
+      return {...r, cubierto, pendiente: total-cubierto, estadoPago};
+    });
+  }
+
+  function saldoCliente(clienteId){
+    const facturado = state.remitos.filter(r=>r.medioPago==='Cuenta Corriente' && String(r.clienteId)===String(clienteId)).reduce((s,r)=>s+Number(r.total),0);
+    const pagado = state.ccPagos.filter(p=>String(p.clienteId)===String(clienteId)).reduce((s,p)=>s+Number(p.monto),0);
+    return {facturado, pagado, saldo: facturado - pagado};
+  }
+
+  function renderCuentasCorrientes(){
+    let html = renderTopbar("Cuentas Corrientes");
+    const clientesConCC = [...new Set(state.remitos.filter(r=>r.medioPago==='Cuenta Corriente').map(r=>String(r.clienteId)))];
+    const filas = clientesConCC.map(cid=>{
+      const cliente = state.clientes.find(c=>String(c.id)===cid);
+      const s = saldoCliente(cid);
+      return {clienteId:cid, nombre: cliente?cliente.nombre:"Consumidor final", ...s};
+    }).filter(f=>Math.abs(f.saldo) > 0.01).sort((a,b)=>b.saldo-a.saldo);
+    const totalAdeudado = filas.reduce((s,f)=>s+f.saldo,0);
+
+    html += `<div class="card" style="margin-bottom:16px;display:inline-block;"><div class="label" style="font-size:12.5px;color:var(--foam-dim);text-transform:uppercase;">Total adeudado</div><div style="font-size:20px;margin-top:4px;color:var(--rust-600);">${fmtMoney(totalAdeudado)}</div></div>`;
+
+    if(filas.length===0){ html += `<div class="empty">No hay cuentas corrientes con saldo pendiente.</div>`; }
+    else {
+      html += `<table><thead><tr><th>Cliente</th><th>Facturado</th><th>Pagado</th><th>Saldo</th><th></th></tr></thead><tbody>`;
+      filas.forEach(f=>{
+        html += `<tr><td>${f.nombre}</td><td class="mono num">${fmtMoney(f.facturado)}</td><td class="mono num">${fmtMoney(f.pagado)}</td><td class="mono num" style="color:var(--rust-600);font-weight:800;">${fmtMoney(f.saldo)}</td>
+          <td><button class="btn small" onclick="EuskeraApp.openModal('verCuenta','${f.clienteId}')">Ver Cuenta</button></td></tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+    return html;
+  }
+
+  const estadoLoteLabel = {en_coccion:"En cocción", fermentando:"Fermentando", madurando:"Madurando", terminado:"Terminado"};
+  const estadoLotePill = {en_coccion:"entregado", fermentando:"atrasado", madurando:"atrasado", terminado:"planta"};
+
+  function renderProduccion(){
+    let html = renderTopbar("Lotes de Producción");
+    html += `<div style="margin-bottom:16px;"><button class="btn" onclick="EuskeraApp.openModal('nuevoLoteProduccion')">+ Nuevo lote</button></div>`;
+    if(state.lotesProduccion.length===0){ html += `<div class="empty">Todavía no cargaste ningún lote de producción.</div>`; }
+    else {
+      html += `<table><thead><tr><th>N° Lote</th><th>Cerveza</th><th>Litros objetivo</th><th>Cocción</th><th>Estado</th><th></th><th></th></tr></thead><tbody>`;
+      state.lotesProduccion.forEach(l=>{
+        html += `<tr>
+          <td class="mono">${l.numero}</td><td>${l.productoNombre||"—"}</td><td class="mono num">${fmtQty(l.litrosObjetivo)} Lts.</td><td class="mono">${fmtDate(l.fechaCoccion)}</td>
+          <td><span class="pill ${estadoLotePill[l.estado]}"><span class="keg ${estadoLotePill[l.estado]}"></span>${estadoLoteLabel[l.estado]}</span></td>
+          <td class="row-actions">
+            <button class="btn ghost small" onclick="EuskeraApp.openModal('detalleLote',${l.id})">Ver detalle</button>
+            ${l.estado==='en_coccion' ? `<button class="btn small" onclick="EuskeraApp.pasarAFermentacion(${l.id})">Pasar a Fermentación</button>` : ''}
+            ${l.estado==='fermentando' ? `<button class="btn small" onclick="EuskeraApp.pasarAMaduracion(${l.id})">Pasar a Maduración</button>` : ''}
+            ${l.estado==='madurando' ? `<button class="btn small" onclick="EuskeraApp.openModal('marcarFermentado',${l.id})">Listo</button>` : ''}
+          </td>
+          <td>${l.estado!=='terminado' ? `<button class="btn ghost small danger" onclick="EuskeraApp.confirmarEliminar('loteProduccion',${l.id},'el lote ${l.numero}')">Eliminar</button>` : ''}</td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+    return html;
+  }
+
+  function renderRecetas(){
+    let html = renderTopbar("Recetas");
+    html += `<div style="margin-bottom:16px;"><button class="btn" onclick="EuskeraApp.openModal('nuevaReceta')">+ Nueva receta</button></div>`;
+    if(state.recetas.length===0){ html += `<div class="empty">No hay recetas cargadas.</div>`; }
+    else {
+      html += `<table><thead><tr><th>Receta</th><th>Cerveza</th><th>Litros base</th><th>Insumos</th><th></th></tr></thead><tbody>`;
+      state.recetas.forEach(r=>{
+        const prod = state.productos.find(p=>p.id==r.productoId);
+        html += `<tr>
+          <td style="vertical-align:top;">${r.nombre}</td>
+          <td style="vertical-align:top;">${prod?prod.nombre:"—"}</td>
+          <td class="mono num" style="vertical-align:top;">${fmtQty(r.litrosBase)} Lts.</td>
+          <td style="max-width:420px;">${(r.items||[]).map(it=>{ const ins=state.insumos.find(i=>i.id==it.insumoId); return (ins?ins.nombre:"?")+": "+fmtQty(it.cantidad); }).join(", ")}</td>
+          <td style="vertical-align:top;" class="row-actions">
+            <button class="btn small" onclick="EuskeraApp.openModal('editarReceta',${r.id})">Editar</button>
+            <button class="btn ghost small danger" onclick="EuskeraApp.confirmarEliminar('receta',${r.id},'la receta ${r.nombre}')">Eliminar</button>
+          </td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+    return html;
+  }
+
+  function renderInformes(){
+    let html = renderTopbar("Dash Ventas");
+
+    html += `<div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;margin-bottom:6px;">
+      <div class="field" style="max-width:200px;margin-bottom:0;"><label>Período de las comparativas</label>
+        <select onchange="EuskeraApp.setInformesRango(this.value)">
+          <option value="3" ${ui.informesRango==3?'selected':''}>Últimos 3 meses</option>
+          <option value="6" ${ui.informesRango==6?'selected':''}>Últimos 6 meses</option>
+          <option value="12" ${ui.informesRango==12?'selected':''}>Últimos 12 meses</option>
+        </select></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn small" onclick="EuskeraApp.openModal('consultaCliente')">Historial de cliente</button>
+        <button class="btn small" onclick="EuskeraApp.openModal('consultaBarril')">Historial de barril</button>
+        <button class="btn small" onclick="EuskeraApp.openModal('consultaProducto')">Ventas por producto</button>
+        <button class="btn small" onclick="EuskeraApp.openModal('consultaMedioPago')">Ventas por medio de pago</button>
+      </div>
+    </div>`;
+
+    html += `<div class="informes-grid">
+      <div class="informes-col-left">
+        <div class="card chart-card"><div class="chart-label">Ventas $ por mes</div><canvas id="chart-ventas"></canvas></div>
+        <div class="card chart-card"><div class="chart-label">Litros por mes (Granel / Recarga)</div><canvas id="chart-litros"></canvas></div>
+        <div class="card chart-card"><div class="chart-label">Compras vs Ventas</div><canvas id="chart-comprasventas"></canvas></div>
+      </div>
+      <div class="card chart-card chart-card-tall"><div class="chart-label">% Litros por variedad</div><canvas id="chart-variedad"></canvas></div>
+    </div>`;
+
+    return html;
+  }
+
+  async function cargarAjustes(){
+    try{
+      const r = await api("get_ajustes");
+      if(r.ok){ ui.ajustesData = r.ajustes; render(); }
+      else { showToast(r.error || "No se pudieron cargar los ajustes"); }
+    }catch(e){ console.error(e); showToast("No se pudo conectar con el servidor."); }
+  }
+  function renderAjustes(){
+    let html = renderTopbar("Ajustes");
+    html += `<p style="color:var(--foam-dim);font-size:11.5px;margin-bottom:14px;">Cada anulación (de compra, venta o lote de producción) o ajuste manual queda agrupado acá en un solo registro numerado, con el detalle de qué ítems movió.</p>`;
+    html += `<div style="margin-bottom:16px;"><button class="btn" onclick="EuskeraApp.openModal('nuevoAjusteManual')">+ Cargar ajuste manual</button></div>`;
+    if(ui.ajustesData===null){
+      html += `<div style="color:var(--foam-dim);padding:20px 0;">Cargando…</div>`;
+      return html;
+    }
+    if(ui.ajustesData.length===0){ html += `<div class="empty">Todavía no se registró ningún ajuste o anulación.</div>`; return html; }
+    html += `<table><thead><tr><th>N° Ajuste</th><th>Fecha</th><th>Concepto</th><th>Artículos</th><th>Usuario</th><th></th></tr></thead><tbody>`;
+    ui.ajustesData.forEach(a=>{
+      html += `<tr>
+        <td class="mono">${a.numero}</td>
+        <td class="mono">${fmtDate(a.fecha)}</td>
+        <td>${a.concepto}</td>
+        <td class="mono num">${(a.items||[]).length}</td>
+        <td class="mono">${a.usuario||"—"}</td>
+        <td><button class="btn small" onclick="EuskeraApp.openModal('detalleAjuste',${a.id})">Ver detalle</button></td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+    return html;
+  }
+
+  function formatArNumberInput(el){
+    let raw = el.value;
+    const neg = raw.trim().startsWith('-');
+    raw = raw.replace(/[^\d,]/g, '');
+    const firstComma = raw.indexOf(',');
+    if(firstComma !== -1){ raw = raw.slice(0, firstComma+1) + raw.slice(firstComma+1).replace(/,/g,''); }
+    let [intPart, decPart] = raw.split(',');
+    intPart = (intPart||'').replace(/^0+(?=\d)/,'');
+    if(intPart === '') intPart = '0';
+    intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    let formatted = intPart;
+    if(decPart !== undefined) formatted += ',' + decPart.slice(0,3);
+    if(neg) formatted = '-' + formatted;
+    el.value = formatted;
+  }
+  function parseArNumber(str){
+    if(str===undefined || str===null || str==='') return 0;
+    return parseFloat(String(str).replace(/\./g,'').replace(',', '.')) || 0;
+  }
+
+  function nuevoAjusteManualDraft(){
+    return { fecha: todayISO(), concepto: "", items:[{itemTipo:"insumo", itemId:"", stockCorrecto:"", precio:""}] };
+  }
+  function syncAjusteManualDraftFromDOM(){
+    if(!ui.ajusteManualDraft) return;
+    const f = document.getElementById("f-am-fecha");
+    const c = document.getElementById("f-am-concepto");
+    if(f) ui.ajusteManualDraft.fecha = f.value;
+    if(c) ui.ajusteManualDraft.concepto = c.value;
+    ui.ajusteManualDraft.items.forEach((it,idx)=>{
+      const t = document.getElementById("am-tipo-"+idx);
+      const i = document.getElementById("am-item-"+idx);
+      const s = document.getElementById("am-stock-"+idx);
+      if(t) it.itemTipo = t.value;
+      if(i) it.itemId = i.value;
+      if(s) it.stockCorrecto = s.value;
+    });
+  }
+  function onAjusteManualTipoChange(idx){
+    syncAjusteManualDraftFromDOM();
+    ui.ajusteManualDraft.items[idx].itemId = "";
+    render();
+  }
+  function addAjusteManualItem(){ syncAjusteManualDraftFromDOM(); ui.ajusteManualDraft.items.push({itemTipo:"insumo", itemId:"", stockCorrecto:"", precio:""}); render(); }
+  function removeAjusteManualItem(idx){ syncAjusteManualDraftFromDOM(); if(ui.ajusteManualDraft.items.length<=1) return; ui.ajusteManualDraft.items.splice(idx,1); render(); }
+  async function submitAjusteManual(){
+    syncAjusteManualDraftFromDOM();
+    const d = ui.ajusteManualDraft;
+    if(!d.concepto.trim()) return showToast("Ingresá un concepto (ej: Recuento de stock al 01/07)");
+    for(const it of d.items){
+      if(!it.itemId) return showToast("Elegí un ítem en todos los renglones");
+      if(it.stockCorrecto==="" || parseArNumber(it.stockCorrecto)<0) return showToast("Ingresá un stock correcto válido (no puede ser negativo)");
+    }
+    const items = d.items.map(it=>({itemTipo:it.itemTipo, itemId:it.itemId, stockCorrecto:parseArNumber(it.stockCorrecto)}));
+    const r = await run("crear_ajuste_manual", {fecha:d.fecha, concepto:d.concepto, items}, "Ajuste registrado");
+    if(r){ ui.ajusteManualDraft=null; closeModal(); ui.ajustesData=null; render(); }
+  }
+
+  async function submitNuevoGasto(){
+    const fecha = document.getElementById("f-gasto-fecha").value;
+    const categoriaId = document.getElementById("f-gasto-categoria").value || null;
+    const concepto = document.getElementById("f-gasto-concepto").value.trim();
+    const proveedorId = document.getElementById("f-gasto-proveedor").value || null;
+    const monto = parseArNumber(document.getElementById("f-gasto-monto").value);
+    const medioPago = document.getElementById("f-gasto-mediopago").value;
+    if(!concepto) return showToast("Ingresá un concepto");
+    if(!monto || monto<=0) return showToast("Ingresá un monto válido");
+    if(await run("add_gasto", {fecha, categoriaId, concepto, proveedorId, monto, medioPago}, "Gasto registrado")){ closeModal(); render(); }
+  }
+  function renderGastos(){
+    let html = renderTopbar("Gastos Generales");
+    html += `<div style="margin-bottom:16px;"><button class="btn" onclick="EuskeraApp.openModal('nuevoGasto')">+ Nuevo gasto</button></div>`;
+    if(state.gastos.length===0){ html += `<div class="empty">Todavía no registraste ningún gasto.</div>`; }
+    else {
+      const total = state.gastos.reduce((s,g)=>s+Number(g.monto),0);
+      html += `<div class="card" style="margin-bottom:16px;display:inline-block;"><div class="label" style="font-size:12.5px;color:var(--foam-dim);text-transform:uppercase;">Total histórico</div><div style="font-size:20px;margin-top:4px;">${fmtMoney(total)}</div></div>`;
+      html += `<table><thead><tr><th>Fecha</th><th>Categoría</th><th>Concepto</th><th>Proveedor</th><th>Monto</th><th>Pago</th><th></th></tr></thead><tbody>`;
+      state.gastos.forEach(g=>{
+        html += `<tr><td class="mono">${fmtDate(g.fecha)}</td><td>${g.categoriaNombre||"—"}</td><td>${g.concepto}</td><td>${g.proveedorNombre||"—"}</td>
+          <td class="mono num">${fmtMoney(g.monto)}</td><td class="mono">${g.medioPago}</td>
+          <td><button class="btn ghost small danger" onclick="EuskeraApp.confirmarEliminar('gasto',${g.id},'este gasto')">Eliminar</button></td></tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+    return html;
+  }
+
+  async function submitNuevaCategoriaGasto(){
+    const nombre = document.getElementById("f-nombre").value.trim();
+    if(!nombre) return showToast("Ingresá un nombre");
+    if(await run("add_categoria_gasto", {nombre}, "Categoría agregada")){ closeModal(); render(); }
+  }
+  function renderCategoriasGasto(){
+    let html = renderTopbar("Categorías de Gasto");
+    html += `<p style="color:var(--foam-dim);font-size:11.5px;margin-bottom:14px;">Es tu plan de cuentas simplificado para clasificar los gastos generales (no de mercadería).</p>`;
+    html += `<div style="margin-bottom:16px;"><button class="btn" onclick="EuskeraApp.openModal('nuevaCategoriaGasto')">+ Nueva categoría</button></div>`;
+    if(state.categoriasGasto.length===0){ html += `<div class="empty">No hay categorías cargadas.</div>`; }
+    else {
+      html += `<table><thead><tr><th>Nombre</th><th></th></tr></thead><tbody>`;
+      state.categoriasGasto.forEach(c=>{
+        html += `<tr><td>${c.nombre}</td><td><button class="btn ghost small danger" onclick="EuskeraApp.confirmarEliminar('categoriaGasto',${c.id},'la categoría ${c.nombre}')">Eliminar</button></td></tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+    return html;
+  }
+
+  function renderBalanceMensual(){
+    let html = renderTopbar("Balance Mensual");
+    const mes = ui.balanceMes || todayISO().slice(0,7);
+    html += `<div class="field" style="max-width:200px;"><label>Mes</label><input type="month" value="${mes}" onchange="EuskeraApp.setBalanceMes(this.value)"></div>`;
+
+    const ventasMes = state.remitos.filter(r=>r.fecha.slice(0,7)===mes).reduce((s,r)=>s+Number(r.total),0);
+    const comprasMes = state.compras.filter(c=>c.fecha.slice(0,7)===mes).reduce((s,c)=>s+Number(c.total),0);
+    const gastosMes = state.gastos.filter(g=>g.fecha.slice(0,7)===mes);
+    const totalGastosMes = gastosMes.reduce((s,g)=>s+Number(g.monto),0);
+    const resultado = ventasMes - comprasMes - totalGastosMes;
+
+    html += `<div class="kpis" style="margin-top:10px;">
+      <div class="card kpi"><div class="label">Ventas</div><div class="value green">${fmtMoney(ventasMes)}</div></div>
+      <div class="card kpi"><div class="label">Compras de mercadería</div><div class="value copper">${fmtMoney(comprasMes)}</div></div>
+      <div class="card kpi"><div class="label">Gastos generales</div><div class="value" style="color:var(--rust-600);">${fmtMoney(totalGastosMes)}</div></div>
+      <div class="card kpi"><div class="label">Resultado del mes</div><div class="value" style="color:${resultado>=0?'#9FD8AE':'var(--rust-600)'};">${fmtMoney(resultado)}</div></div>
+    </div>`;
+
+    html += `<div class="section-title">Gastos generales por categoría</div>`;
+    const porCategoria = {};
+    gastosMes.forEach(g=>{ const key=g.categoriaNombre||"Sin categoría"; porCategoria[key]=(porCategoria[key]||0)+Number(g.monto); });
+    const catKeys = Object.keys(porCategoria);
+    if(catKeys.length===0){ html += `<div class="empty">No hay gastos generales cargados este mes.</div>`; }
+    else {
+      html += `<table><thead><tr><th>Categoría</th><th>Total</th></tr></thead><tbody>`;
+      catKeys.forEach(k=>{ html += `<tr><td>${k}</td><td class="mono num">${fmtMoney(porCategoria[k])}</td></tr>`; });
+      html += `</tbody></table>`;
+    }
+    return html;
+  }
+  function setBalanceMes(v){ ui.balanceMes = v; render(); }
+
+  function renderDashCompras(){
+    let html = renderTopbar("Dash Compras");
+    html += `<div class="empty">Todavía no armamos los gráficos de compras. Cuando lo charlemos, van a aparecer acá.</div>`;
+    return html;
+  }
+
+  function renderInformesCharts(){
+    if(!window.Chart) return;
+    if(window.ChartDataLabels && !Chart._euskeraRegistered){ Chart.register(window.ChartDataLabels); Chart._euskeraRegistered = true; }
+    Object.values(charts).forEach(c=>{ if(c) c.destroy(); });
+    charts = {};
+    const n = ui.informesRango;
+    const buckets = buildMonthlyBuckets(n);
+    const labels = buckets.map(b=>b.label);
+    const ventasPorMes = buckets.map(b=>state.remitos.filter(r=>r.fecha.slice(0,7)===b.key).reduce((s,r)=>s+Number(r.total),0));
+    const comprasPorMes = buckets.map(b=>state.compras.filter(c=>c.fecha.slice(0,7)===b.key).reduce((s,c)=>s+Number(c.total),0));
+    const granelPorMes = buckets.map(b=>segmentadoMes(b.key,'granel'));
+    const recargaPorMes = buckets.map(b=>segmentadoMes(b.key,'recarga'));
+
+    const textColor = '#F3ECDD';
+    const gridColor = 'rgba(243,236,221,0.08)';
+    const commonScales = { x:{ticks:{color:textColor,font:{size:9}},grid:{display:false}}, y:{display:false,grid:{color:gridColor}} };
+
+    const cv = document.getElementById('chart-ventas');
+    if(cv) charts.ventas = new Chart(cv, {type:'bar', data:{labels, datasets:[{label:'Ventas $', data:ventasPorMes, backgroundColor:'#C17D3E'}]},
+      options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, datalabels:{display:false}}, scales:commonScales}});
+
+    const cl = document.getElementById('chart-litros');
+    if(cl) charts.litros = new Chart(cl, {type:'bar', data:{labels, datasets:[
+      {label:'Granel', data:granelPorMes, backgroundColor:'#3F6B4C'},
+      {label:'Recarga', data:recargaPorMes, backgroundColor:'#C17D3E'}
+    ]}, options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:textColor,font:{size:9}},boxWidth:10}, datalabels:{display:false}},
+      scales:{x:{stacked:true,ticks:{color:textColor,font:{size:9}},grid:{display:false}}, y:{stacked:true,display:false,grid:{color:gridColor}}}}});
+
+    const ccv = document.getElementById('chart-comprasventas');
+    if(ccv) charts.comprasVentas = new Chart(ccv, {type:'bar', data:{labels, datasets:[
+      {label:'Ventas', data:ventasPorMes, backgroundColor:'#C17D3E'},
+      {label:'Compras', data:comprasPorMes, backgroundColor:'#A8462F'}
+    ]}, options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:textColor,font:{size:9}},boxWidth:10}, datalabels:{display:false}},
+      scales:commonScales}});
+
+    const porVariedad = {};
+    buckets.forEach(b=>{
+      state.remitos.filter(r=>r.fecha.slice(0,7)===b.key).forEach(r=>{
+        (r.items||[]).forEach(it=>{
+          const prod = state.productos.find(p=>p.id==it.productoId);
+          if(prod && prod.tipo==='granel' && prod.unidadMedida==='litros'){
+            porVariedad[prod.nombre] = (porVariedad[prod.nombre]||0) + Number(it.cantidad);
+          }
+        });
+      });
+    });
+    const cvar = document.getElementById('chart-variedad');
+    if(cvar){
+      const varLabels = Object.keys(porVariedad);
+      const varData = varLabels.map(k=>porVariedad[k]);
+      const varTotal = varData.reduce((s,v)=>s+v,0);
+      charts.variedad = new Chart(cvar, {type:'doughnut', data:{labels:varLabels, datasets:[{data:varData, backgroundColor:['#C17D3E','#3F6B4C','#A8462F','#E3A968','#7FB88F','#8A7F6E','#E0876F'], borderColor:'#17130F', borderWidth:3}]},
+        options:{responsive:true, maintainAspectRatio:false,
+          plugins:{legend:{position:'bottom',labels:{color:textColor,font:{size:13}}},
+            datalabels:{color:'#17130F', font:{size:20,weight:'800'}, formatter:(v)=> varTotal ? ((v/varTotal)*100).toFixed(0)+'%' : ''}}}});
+    }
+  }
+
+  function renderCompras(){
+    let html = renderTopbar("Compras");
+    html += `<div style="margin-bottom:16px;"><button class="btn" onclick="EuskeraApp.openModal('nuevaCompra')">+ Registrar compra</button></div>`;
+    if(state.compras.length===0){ html += `<div class="empty">Todavía no registraste ninguna compra.</div>`; }
+    else {
+      const total = state.compras.reduce((s,c)=>s+Number(c.total),0);
+      html += `<div class="card" style="margin-bottom:16px;display:inline-block;"><div class="label" style="font-size:12.5px;color:var(--foam-dim);text-transform:uppercase;">Total gastado</div><div style="font-size:20px;margin-top:4px;">${fmtMoney(total)}</div></div>`;
+      html += `<table><thead><tr><th>Fecha</th><th>Proveedor</th><th>N° Documento</th><th>Total</th><th>Pago</th><th></th><th></th><th></th></tr></thead><tbody>`;
+      state.compras.forEach(c=>{
+        html += `<tr><td class="mono">${fmtDate(c.fecha)}</td><td>${c.proveedorNombre||"—"}</td><td class="mono">${c.numeroDocumento||"—"}</td>
+          <td class="mono num">${fmtMoney(c.total)}</td><td class="mono">${c.medioPago}</td>
+          <td><button class="btn small" onclick="EuskeraApp.openModal('detalleCompra',${c.id})">Ver detalle</button></td>
+          <td><button class="btn ghost small" onclick="EuskeraApp.openModal('editarCompra',${c.id})">Editar</button></td>
+          <td><button class="btn ghost small danger" onclick="EuskeraApp.confirmarEliminar('compra',${c.id},'esta compra')">Eliminar</button></td></tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+    return html;
+  }
+
+  function renderRemitoItemRow(it, idx){
+    const grupos = [{tipo:"granel",label:"Cerveza a granel"},{tipo:"envase",label:"Envases"},{tipo:"recarga",label:"Recargas"},{tipo:"merch",label:"Merchandising"}];
+    let productoOpts = `<option value="">Elegí un producto…</option>`;
+    grupos.forEach(g=>{
+      const items = state.productos.filter(p=>p.tipo===g.tipo);
+      if(items.length){
+        productoOpts += `<optgroup label="${g.label}">` + items.map(p=>
+          `<option value="${p.id}" ${it.productoId==p.id?'selected':''}>${p.nombre} (stock: ${p.stock})</option>`
+        ).join("") + `</optgroup>`;
+      }
+    });
+    const subtotal = Number(it.cantidad||0)*Number(it.precioUnit||0);
+    return `<div class="item-row">
+      <div class="field"><select id="ri-producto-${idx}" onchange="EuskeraApp.onRemitoProductoChange(${idx})">${productoOpts}</select></div>
+      <div class="field"><input id="ri-cantidad-${idx}" type="number" value="${it.cantidad}" min="0.01" step="0.01" onchange="EuskeraApp.syncRemitoDraftFromDOM();EuskeraApp.render()"></div>
+      <div class="field"><input id="ri-precio-${idx}" type="number" value="${it.precioUnit}" onchange="EuskeraApp.syncRemitoDraftFromDOM();EuskeraApp.render()"></div>
+      <div class="field"><input id="ri-subtotal-${idx}" type="number" value="${subtotal.toFixed(2)}" title="Total cobrado — si lo editás, el precio unitario se recalcula solo" onchange="EuskeraApp.onRemitoSubtotalChange(${idx})"></div>
+      <button class="remove-btn" title="Quitar renglón" onclick="EuskeraApp.removeRemitoItem(${idx})" ${idx===0?'style="visibility:hidden;"':''}>✕</button>
+    </div>`;
+  }
+
+  async function submitNuevoMedioPago(){
+    const nombre = document.getElementById("f-nombre").value.trim();
+    if(!nombre) return showToast("Ingresá un nombre");
+    if(await run("add_medio_pago", {nombre}, "Medio de pago agregado")){ closeModal(); render(); }
+  }
+
+  async function submitNuevoTipoInsumo(){
+    const nombre = document.getElementById("f-nombre").value.trim();
+    if(!nombre) return showToast("Ingresá un nombre");
+    if(await run("add_tipo_insumo", {nombre}, "Tipo de insumo agregado")){ closeModal(); render(); }
+  }
+
+  function renderTiposInsumo(){
+    let html = renderTopbar("Tipo Insumos");
+    html += `<div style="margin-bottom:16px;"><button class="btn" onclick="EuskeraApp.openModal('nuevoTipoInsumo')">+ Nuevo tipo</button></div>`;
+    if(state.tiposInsumo.length===0){ html += `<div class="empty">No hay tipos de insumo cargados.</div>`; }
+    else {
+      html += `<table><thead><tr><th>Nombre</th></tr></thead><tbody>`;
+      state.tiposInsumo.forEach(t=>{ html += `<tr><td>${t.nombre}</td></tr>`; });
+      html += `</tbody></table>`;
+    }
+    return html;
+  }
+
+  function renderMediosPago(){
+    let html = renderTopbar("Medios de Pago");
+    html += `<div style="margin-bottom:16px;"><button class="btn" onclick="EuskeraApp.openModal('nuevoMedioPago')">+ Nuevo medio de pago</button></div>`;
+    if(state.mediosPago.length===0){ html += `<div class="empty">No hay medios de pago cargados.</div>`; }
+    else {
+      html += `<table><thead><tr><th>Nombre</th></tr></thead><tbody>`;
+      state.mediosPago.forEach(m=>{ html += `<tr><td>${m.nombre}</td></tr>`; });
+      html += `</tbody></table>`;
+    }
+    return html;
+  }
+
+  function renderModal(){
+    if(!ui.modal) return "";
+    const m = ui.modal;
+    let inner = "";
+    let wide = false;
+
+    if(m.name==="editarRemito"){
+      const r = state.remitos.find(x=>x.id==m.payload);
+      inner = `<h2 class="stencil">Editar remito ${r.numero}</h2>
+        <p style="color:var(--foam-dim);font-size:11.5px;margin-bottom:14px;">Esto corrige la clasificación, fecha y medio de pago. Para cambiar cliente o renglones, avisame.</p>
+        <div class="field"><label>Tipo de Venta</label><select id="f-editremito-tipoventa">
+          <option value="varios" ${r.tipoVenta==='varios'?'selected':''}>Varios</option>
+          <option value="recarga" ${r.tipoVenta==='recarga'?'selected':''}>Recarga</option>
+          <option value="granel" ${r.tipoVenta==='granel'?'selected':''}>Granel</option>
+        </select></div>
+        <div class="field"><label>Fecha</label><input id="f-editremito-fecha" type="date" value="${r.fecha}"></div>
+        <div class="field"><label>Medio de pago</label><select id="f-editremito-mediopago">${mediosPagoOpts(r.medioPago)}</select></div>
+        <button class="btn" onclick="EuskeraApp.submitEditarRemito(${r.id})">Guardar cambios</button>
+        <button class="btn ghost" onclick="EuskeraApp.closeModal()" style="margin-left:8px;">Cancelar</button>`;
+    }
+
+    if(m.name==="consultaCliente"){
+      wide = true;
+      const clienteOpts = state.clientes.map(c=>`<option value="${c.id}" ${ui.informes.clienteId==c.id?'selected':''}>${c.nombre}</option>`).join("");
+      const ventas = ui.informes.clienteId ? state.remitos.filter(r=>r.clienteId==ui.informes.clienteId).sort((a,b)=>b.id-a.id) : [];
+      const total = ventas.reduce((s,r)=>s+Number(r.total),0);
+      inner = `<h2 class="stencil">Historial de cliente</h2>
+        <div class="field"><label>Cliente</label><select onchange="EuskeraApp.setInformesQuery('clienteId', this.value)"><option value="">Elegí un cliente…</option>${clienteOpts}</select></div>
+        ${ui.informes.clienteId ? (ventas.length ? `
+          <div class="card" style="display:inline-block;margin-bottom:14px;"><div class="label" style="font-size:11px;color:var(--foam-dim);text-transform:uppercase;">Total del historial</div><div style="font-size:18px;margin-top:4px;">${fmtMoney(total)}</div></div>
+          <table><thead><tr><th>N° Remito</th><th>Fecha</th><th>Tipo</th><th>Total</th><th>Pago</th></tr></thead><tbody>
+          ${ventas.map(r=>`<tr><td class="mono">${r.numero}</td><td class="mono">${fmtDate(r.fecha)}</td><td class="mono">${cap(r.tipoVenta)}</td><td class="mono num">${fmtMoney(r.total)}</td><td class="mono">${r.medioPago}</td></tr>`).join("")}
+          </tbody></table>
+          <button class="btn ghost small" style="margin-top:12px;" onclick='EuskeraApp.exportCSV("historial_cliente.csv",["N Remito","Fecha","Tipo","Total","Pago"],${JSON.stringify(ventas.map(r=>[r.numero,r.fecha,r.tipoVenta,r.total,r.medioPago]))})'>Exportar CSV</button>
+        ` : `<div class="empty">Ese cliente no tiene ventas registradas.</div>`) : ''}
+        <div style="margin-top:18px;"><button class="btn ghost" onclick="EuskeraApp.closeModal()">Cerrar</button></div>`;
+    }
+
+    if(m.name==="consultaBarril"){
+      wide = true;
+      const barrilOpts = state.barriles.map(b=>`<option value="${b.id}" ${ui.informes.barrilId==b.id?'selected':''}>${b.id}${b.descripcion?' · '+b.descripcion:''}</option>`).join("");
+      const barril = state.barriles.find(b=>b.id===ui.informes.barrilId);
+      inner = `<h2 class="stencil">Historial de barril</h2>
+        <div class="field"><label>Barril</label><select onchange="EuskeraApp.setInformesQuery('barrilId', this.value)"><option value="">Elegí un barril…</option>${barrilOpts}</select></div>
+        ${barril ? (barril.movimientos && barril.movimientos.length ? `
+          <table><thead><tr><th>Fecha</th><th>Acción</th><th>Cliente</th></tr></thead><tbody>
+          ${barril.movimientos.slice().reverse().map(m2=>`<tr><td class="mono">${fmtDate(m2.fecha)}</td><td class="mono">${cap(m2.accion)}</td><td>${m2.clienteNombre||"—"}</td></tr>`).join("")}
+          </tbody></table>
+          <button class="btn ghost small" style="margin-top:12px;" onclick='EuskeraApp.exportCSV("historial_barril.csv",["Fecha","Accion","Cliente"],${JSON.stringify(barril.movimientos.map(m2=>[m2.fecha,m2.accion,m2.clienteNombre||""]))})'>Exportar CSV</button>
+        ` : `<div class="empty">Ese barril no tiene movimientos registrados.</div>`) : ''}
+        <div style="margin-top:18px;"><button class="btn ghost" onclick="EuskeraApp.closeModal()">Cerrar</button></div>`;
+    }
+
+    if(m.name==="consultaProducto"){
+      wide = true;
+      const prodOpts = state.productos.map(p=>`<option value="${p.id}" ${ui.informes.prodId==p.id?'selected':''}>${p.nombre}</option>`).join("");
+      const desde = ui.informes.fechaDesde, hasta = ui.informes.fechaHasta;
+      let filas = [];
+      if(ui.informes.prodId){
+        state.remitos.forEach(r=>{
+          if(desde && r.fecha < desde) return;
+          if(hasta && r.fecha > hasta) return;
+          (r.items||[]).filter(it=>it.productoId==ui.informes.prodId).forEach(it=>{
+            filas.push({fecha:r.fecha, numero:r.numero, cliente:r.clienteNombre, cantidad:it.cantidad, total:it.cantidad*it.precioUnit});
+          });
+        });
+      }
+      const totalCant = filas.reduce((s,f)=>s+Number(f.cantidad),0);
+      const totalMonto = filas.reduce((s,f)=>s+Number(f.total),0);
+      inner = `<h2 class="stencil">Ventas por producto</h2>
+        <div class="field-row">
+          <div class="field"><label>Producto</label><select onchange="EuskeraApp.setInformesQuery('prodId', this.value)"><option value="">Elegí un producto…</option>${prodOpts}</select></div>
+          <div class="field"><label>Desde</label><input type="date" value="${desde}" onchange="EuskeraApp.setInformesQuery('fechaDesde', this.value)"></div>
+          <div class="field"><label>Hasta</label><input type="date" value="${hasta}" onchange="EuskeraApp.setInformesQuery('fechaHasta', this.value)"></div>
+        </div>
+        ${ui.informes.prodId ? (filas.length ? `
+          <div class="card" style="display:inline-block;margin-bottom:14px;"><div class="label" style="font-size:11px;color:var(--foam-dim);text-transform:uppercase;">Total del período</div><div style="font-size:18px;margin-top:4px;">${fmtQty(totalCant)} — ${fmtMoney(totalMonto)}</div></div>
+          <table><thead><tr><th>Fecha</th><th>N° Remito</th><th>Cliente</th><th>Cantidad</th><th>Total</th></tr></thead><tbody>
+          ${filas.map(f=>`<tr><td class="mono">${fmtDate(f.fecha)}</td><td class="mono">${f.numero}</td><td>${f.cliente}</td><td class="mono">${f.cantidad}</td><td class="mono num">${fmtMoney(f.total)}</td></tr>`).join("")}
+          </tbody></table>
+          <button class="btn ghost small" style="margin-top:12px;" onclick='EuskeraApp.exportCSV("ventas_producto.csv",["Fecha","N Remito","Cliente","Cantidad","Total"],${JSON.stringify(filas.map(f=>[f.fecha,f.numero,f.cliente,f.cantidad,f.total]))})'>Exportar CSV</button>
+        ` : `<div class="empty">Ese producto no tiene ventas en el período elegido.</div>`) : ''}
+        <div style="margin-top:18px;"><button class="btn ghost" onclick="EuskeraApp.closeModal()">Cerrar</button></div>`;
+    }
+
+    if(m.name==="consultaMedioPago"){
+      wide = true;
+      const desde = ui.informes.fechaDesde, hasta = ui.informes.fechaHasta;
+      const remitosPeriodo = state.remitos.filter(r=>(!desde || r.fecha>=desde) && (!hasta || r.fecha<=hasta));
+      const porMedio = {};
+      remitosPeriodo.forEach(r=>{ porMedio[r.medioPago] = (porMedio[r.medioPago]||0) + Number(r.total); });
+      const medios = Object.keys(porMedio);
+      const totalGeneral = medios.reduce((s,k)=>s+porMedio[k],0);
+      inner = `<h2 class="stencil">Ventas por medio de pago</h2>
+        <div class="field-row">
+          <div class="field"><label>Desde</label><input type="date" value="${desde}" onchange="EuskeraApp.setInformesQuery('fechaDesde', this.value)"></div>
+          <div class="field"><label>Hasta</label><input type="date" value="${hasta}" onchange="EuskeraApp.setInformesQuery('fechaHasta', this.value)"></div>
+        </div>
+        ${medios.length ? `
+          <table><thead><tr><th>Medio de pago</th><th>Total</th><th>%</th></tr></thead><tbody>
+          ${medios.map(k=>`<tr><td>${k}</td><td class="mono num">${fmtMoney(porMedio[k])}</td><td class="mono num">${totalGeneral?((porMedio[k]/totalGeneral)*100).toFixed(1):0}%</td></tr>`).join("")}
+          </tbody></table>
+          <button class="btn ghost small" style="margin-top:12px;" onclick='EuskeraApp.exportCSV("ventas_medio_pago.csv",["Medio de pago","Total"],${JSON.stringify(medios.map(k=>[k,porMedio[k]]))})'>Exportar CSV</button>
+        ` : `<div class="empty">No hay ventas en el período elegido.</div>`}
+        <div style="margin-top:18px;"><button class="btn ghost" onclick="EuskeraApp.closeModal()">Cerrar</button></div>`;
+    }
+
+    if(m.name==="alertaStock"){
+      const d = ui.alertaStockData;
+      inner = `<h2 class="stencil" style="color:var(--rust-600);">⚠ Stock bajo</h2>
+        ${d.insumosBajos.length ? `<div class="section-title first">Insumos</div>` + d.insumosBajos.map(i=>`<div class="mono" style="font-size:13.5px;color:var(--rust-600);">${i.nombre}: ${i.stock} ${i.unidad} (seguridad: ${i.stockSeguridad} ${i.unidad})</div>`).join("") : ""}
+        ${d.productosBajos.length ? `<div class="section-title">Productos</div>` + d.productosBajos.map(p=>`<div class="mono" style="font-size:13.5px;color:var(--rust-600);">${p.nombre}: ${p.stock}</div>`).join("") : ""}
+        <div style="margin-top:18px;">
+          <button class="btn ghost" onclick="EuskeraApp.closeModal()">Cerrar</button>
+        </div>`;
+    }
+
+    if(m.name==="verCuenta"){
+      wide = true;
+      const clienteId = m.payload;
+      const cliente = state.clientes.find(c=>String(c.id)===String(clienteId));
+      const s = saldoCliente(clienteId);
+      const remitosCC = state.remitos.filter(r=>r.medioPago==='Cuenta Corriente' && String(r.clienteId)===String(clienteId));
+      const pagos = state.ccPagos.filter(p=>String(p.clienteId)===String(clienteId));
+      const remitosAsignados = asignarPagosFIFO(remitosCC, s.pagado);
+      const estadoPorRemito = {};
+      remitosAsignados.forEach(r=>{ estadoPorRemito[r.id] = r.estadoPago; });
+      const estadoPill = {Pagado:"planta", Parcial:"entregado", Pendiente:"atrasado"};
+      const movimientos = [
+        ...remitosCC.map(r=>({fecha:r.fecha, tipo:'Venta', detalle:'Remito '+r.numero, debe:Number(r.total), haber:0, id:'r'+r.id, estado:estadoPorRemito[r.id]})),
+        ...pagos.map(p=>({fecha:p.fecha, tipo:'Pago', detalle:'Pago a cuenta ('+p.medioPago+')', debe:0, haber:Number(p.monto), id:'p'+p.id, pagoId:p.id}))
+      ].sort((a,b)=> a.fecha<b.fecha?-1:a.fecha>b.fecha?1:0);
+
+      inner = `<h2 class="stencil" style="color:var(--copper-300);">${cliente?cliente.nombre:"Consumidor final"}</h2>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+          <div class="card"><div class="label" style="font-size:11px;color:var(--foam-dim);text-transform:uppercase;">Facturado</div><div style="font-size:16px;margin-top:4px;">${fmtMoney(s.facturado)}</div></div>
+          <div class="card"><div class="label" style="font-size:11px;color:var(--foam-dim);text-transform:uppercase;">Pagado</div><div style="font-size:16px;margin-top:4px;color:#9FD8AE;">${fmtMoney(s.pagado)}</div></div>
+          <div class="card"><div class="label" style="font-size:11px;color:var(--foam-dim);text-transform:uppercase;">Saldo</div><div style="font-size:16px;margin-top:4px;color:var(--rust-600);font-weight:800;">${fmtMoney(s.saldo)}</div></div>
+        </div>
+        <p style="color:var(--foam-dim);font-size:11px;margin-bottom:10px;">Los pagos se aplican solos a las ventas más viejas primero.</p>
+        ${movimientos.length ? `
+          <table><thead><tr><th>Fecha</th><th>Movimiento</th><th>Debe</th><th>Haber</th><th>Estado</th><th></th></tr></thead><tbody>
+          ${movimientos.map(mv=>`<tr><td class="mono">${fmtDate(mv.fecha)}</td><td>${mv.detalle}</td>
+            <td class="mono num">${mv.debe?fmtMoney(mv.debe):''}</td><td class="mono num">${mv.haber?fmtMoney(mv.haber):''}</td>
+            <td>${mv.estado?`<span class="pill ${estadoPill[mv.estado]}">${mv.estado}</span>`:''}</td>
+            <td>${mv.pagoId?`<button class="btn ghost small danger" onclick="EuskeraApp.eliminarPagoCC(${mv.pagoId},'${clienteId}')">Quitar</button>`:''}</td></tr>`).join("")}
+          </tbody></table>
+        ` : `<div class="empty">Sin movimientos.</div>`}
+
+        <div class="section-title">Registrar pago a cuenta</div>
+        <div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;">
+          <div class="field" style="max-width:130px;margin-bottom:0;"><label>Monto</label><input id="f-pagocc-monto" type="number" placeholder="0"></div>
+          <div class="field" style="max-width:150px;margin-bottom:0;"><label>Fecha</label><input id="f-pagocc-fecha" type="date" value="${todayISO()}"></div>
+          <div class="field" style="max-width:170px;margin-bottom:0;"><label>Medio de pago</label><select id="f-pagocc-mediopago">${mediosPagoOpts()}</select></div>
+          <button class="btn" onclick="EuskeraApp.submitPagoCC('${clienteId}')">Registrar pago</button>
+        </div>
+
+        <div style="margin-top:18px;"><button class="btn ghost" onclick="EuskeraApp.closeModal()">Cerrar</button></div>`;
+    }
+
+    if(m.name==="nuevoLoteProduccion"){
+      wide = true;
+      if(!ui.loteDraft) ui.loteDraft = nuevoLoteDraft();
+      const d = ui.loteDraft;
+      const prodOpts = state.productos.filter(p=>p.tipo==='granel').map(p=>`<option value="${p.id}" ${d.productoId==p.id?'selected':''}>${p.nombre}</option>`).join("");
+      const insOpts = state.insumos.map(i=>`<option value="${i.id}">${i.nombre} (stock: ${fmtQty(i.stock)} ${i.unidad})</option>`).join("");
+      inner = `<h2 class="stencil">Nuevo lote de producción</h2>
+        <div class="field-row">
+          <div class="field"><label>Cerveza</label><select id="f-lote-producto" onchange="EuskeraApp.onLoteProductoChange()">
+            <option value="">Elegí una cerveza…</option>${prodOpts}
+          </select></div>
+          <div class="field"><label>Litros objetivo</label><input id="f-lote-litros" type="number" value="${d.litrosObjetivo}" onchange="EuskeraApp.onLoteLitrosChange()" placeholder="100"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Fecha de cocción</label><input id="f-lote-fecha" type="date" value="${d.fecha}"></div>
+          <div class="field"><label>Notas</label><input id="f-lote-notas" value="${d.notas}" placeholder="Opcional"></div>
+        </div>
+        <div class="section-title first">Insumos consumidos ${state.recetas.length ? '<span style="font-weight:400;color:var(--foam-dim);font-size:11px;">(se sugieren solos si hay receta cargada para esta cerveza)</span>' : ''}</div>
+        <div class="item-row-headers" style="grid-template-columns:1fr 110px 32px;"><span>Insumo</span><span>Cantidad</span><span></span></div>
+        ${d.items.map((it,idx)=>`
+          <div class="item-row" style="grid-template-columns:1fr 110px 32px;">
+            <div class="field"><select id="li-insumo-${idx}">
+              <option value="">Elegí un insumo…</option>
+              ${state.insumos.map(i=>`<option value="${i.id}" ${it.insumoId==i.id?'selected':''}>${i.nombre} (stock: ${fmtQty(i.stock)} ${i.unidad})</option>`).join("")}
+            </select></div>
+            <div class="field"><input id="li-cantidad-${idx}" type="number" value="${it.cantidad}" step="0.01" onchange="EuskeraApp.syncLoteDraftFromDOM();EuskeraApp.render()"></div>
+            <button class="remove-btn" onclick="EuskeraApp.removeLoteItem(${idx})" ${idx===0?'style="visibility:hidden;"':''}>✕</button>
+          </div>`).join("")}
+        <button class="btn ghost small" onclick="EuskeraApp.addLoteItem()">+ Agregar insumo</button>
+        <p style="color:var(--foam-dim);font-size:11.5px;margin-top:12px;">Al crear el lote, los insumos se descuentan ya mismo (FIFO, de los lotes de compra más viejos). El lote queda "En cocción" hasta que lo pases a fermentación.</p>
+        <button class="btn" onclick="EuskeraApp.submitNuevoLote()" style="margin-top:8px;">Crear lote</button>
+        <button class="btn ghost" onclick="EuskeraApp.closeModal();ui_loteDraft_reset()" style="margin-left:8px;">Cancelar</button>`;
+    }
+
+    if(m.name==="marcarFermentado"){
+      const l = state.lotesProduccion.find(x=>x.id==m.payload);
+      inner = `<h2 class="stencil">Listo → a stock</h2>
+        <p style="color:var(--foam-100);font-size:14px;margin-bottom:16px;">Lote ${l.numero} · ${l.productoNombre} · objetivo: ${fmtQty(l.litrosObjetivo)} Lts.</p>
+        <div class="field"><label>Litros reales obtenidos</label><input id="f-litrosreales" type="number" value="${l.litrosObjetivo}"></div>
+        <p style="color:var(--foam-dim);font-size:11.5px;">Esta cantidad se suma directo al stock de ${l.productoNombre}.</p>
+        <button class="btn" onclick="EuskeraApp.submitMarcarFermentado(${l.id})">Confirmar y sumar a stock</button>
+        <button class="btn ghost" onclick="EuskeraApp.closeModal()" style="margin-left:8px;">Cancelar</button>`;
+    }
+
+    if(m.name==="detalleLote"){
+      const l = state.lotesProduccion.find(x=>x.id==m.payload);
+      wide = true;
+      inner = `<h2 class="stencil" style="color:var(--copper-300);">Lote ${l.numero}</h2>
+        <p style="color:var(--foam-100);font-size:14px;margin-bottom:14px;">${l.productoNombre} · ${estadoLoteLabel[l.estado]} · Cocción: ${fmtDate(l.fechaCoccion)}${l.fechaFermentacion?(' · Fermentación: '+fmtDate(l.fechaFermentacion)):''}${l.fechaMaduracion?(' · Maduración: '+fmtDate(l.fechaMaduracion)):''}${l.fechaTerminado?(' · Terminado: '+fmtDate(l.fechaTerminado)):''}</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+          <div class="card"><div class="label" style="font-size:11px;color:var(--foam-dim);text-transform:uppercase;">Litros objetivo</div><div style="font-size:16px;margin-top:4px;">${fmtQty(l.litrosObjetivo)} Lts.</div></div>
+          ${l.litrosReales ? `<div class="card"><div class="label" style="font-size:11px;color:var(--foam-dim);text-transform:uppercase;">Litros reales</div><div style="font-size:16px;margin-top:4px;">${fmtQty(l.litrosReales)} Lts.</div></div>` : ''}
+          <div class="card"><div class="label" style="font-size:11px;color:var(--foam-dim);text-transform:uppercase;">Costo insumos</div><div style="font-size:16px;margin-top:4px;">${fmtMoney(l.costoTotal)}</div></div>
+        </div>
+        ${l.notas ? `<p style="color:var(--foam-dim);font-size:12.5px;">Notas: ${l.notas}</p>` : ''}
+        <div class="section-title">Insumos consumidos</div>
+        <table><thead><tr><th>Insumo</th><th>Cantidad</th><th>Costo</th></tr></thead><tbody>
+        ${(l.consumos||[]).map(c=>`<tr><td>${c.insumoNombre||"—"}</td><td class="mono num">${fmtQty(c.cantidad)}</td><td class="mono num">${fmtMoney3(c.costo)}</td></tr>`).join("")}
+        </tbody></table>
+        <div style="margin-top:18px;"><button class="btn ghost" onclick="EuskeraApp.closeModal()">Cerrar</button></div>`;
+    }
+
+    if(m.name==="nuevaReceta" || m.name==="editarReceta"){
+      wide = true;
+      if(!ui.recetaDraft || (m.name==="editarReceta" && ui.recetaDraft.id!=m.payload)){
+        ui.recetaDraft = m.name==="editarReceta" ? nuevaRecetaDraft(state.recetas.find(r=>r.id==m.payload)) : nuevaRecetaDraft();
+      }
+      const d = ui.recetaDraft;
+      const prodOpts = state.productos.filter(p=>p.tipo==='granel').map(p=>`<option value="${p.id}" ${d.productoId==p.id?'selected':''}>${p.nombre}</option>`).join("");
+      inner = `<h2 class="stencil">${d.id?"Editar":"Nueva"} receta</h2>
+        <div class="field-row">
+          <div class="field"><label>Cerveza</label><select id="f-receta-producto"><option value="">Elegí una cerveza…</option>${prodOpts}</select></div>
+          <div class="field"><label>Nombre de la receta</label><input id="f-receta-nombre" value="${d.nombre}" placeholder="Ej: Golden clásica"></div>
+        </div>
+        <div class="field"><label>Litros base (a qué cantidad corresponden estas medidas)</label><input id="f-receta-litrosbase" type="number" value="${d.litrosBase}"></div>
+        <div class="section-title first">Insumos</div>
+        <div class="item-row-headers" style="grid-template-columns:1fr 110px 32px;"><span>Insumo</span><span>Cantidad</span><span></span></div>
+        ${d.items.map((it,idx)=>`
+          <div class="item-row" style="grid-template-columns:1fr 110px 32px;">
+            <div class="field"><select id="ri2-insumo-${idx}">
+              <option value="">Elegí un insumo…</option>
+              ${state.insumos.map(i=>`<option value="${i.id}" ${it.insumoId==i.id?'selected':''}>${i.nombre}</option>`).join("")}
+            </select></div>
+            <div class="field"><input id="ri2-cantidad-${idx}" type="number" value="${it.cantidad}" step="0.01"></div>
+            <button class="remove-btn" onclick="EuskeraApp.removeRecetaItem(${idx})" ${idx===0?'style="visibility:hidden;"':''}>✕</button>
+          </div>`).join("")}
+        <button class="btn ghost small" onclick="EuskeraApp.addRecetaItem()">+ Agregar insumo</button>
+        <button class="btn" onclick="EuskeraApp.submitNuevaReceta()" style="margin-top:14px;">${d.id?"Guardar cambios":"Guardar receta"}</button>
+        <button class="btn ghost" onclick="EuskeraApp.closeModal();ui_recetaDraft_reset()" style="margin-left:8px;">Cancelar</button>`;
+    }
+
+    if(m.name==="nuevoGasto"){
+      const catOpts = state.categoriasGasto.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join("");
+      const provOpts = state.proveedores.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join("");
+      inner = `<h2 class="stencil">Nuevo gasto</h2>
+        <div class="field-row">
+          <div class="field"><label>Fecha</label><input id="f-gasto-fecha" type="date" value="${todayISO()}"></div>
+          <div class="field"><label>Categoría</label><select id="f-gasto-categoria"><option value="">Sin especificar</option>${catOpts}</select></div>
+        </div>
+        <div class="field"><label>Concepto</label><input id="f-gasto-concepto" placeholder="Ej: Factura de luz julio"></div>
+        <div class="field"><label>Proveedor (opcional)</label>
+          <div style="display:flex;gap:8px;">
+            <select id="f-gasto-proveedor" style="flex:1;"><option value="">Sin especificar</option>${provOpts}</select>
+            <button class="btn ghost small" onclick="EuskeraApp.setTab('proveedores')">+ Alta de proveedor</button>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Monto</label><input id="f-gasto-monto" type="text" inputmode="decimal" oninput="EuskeraApp.formatArNumberInput(this)" placeholder="0,00"></div>
+          <div class="field"><label>Medio de pago</label><select id="f-gasto-mediopago">${mediosPagoOpts()}</select></div>
+        </div>
+        <button class="btn" onclick="EuskeraApp.submitNuevoGasto()">Guardar</button>
+        <button class="btn ghost" onclick="EuskeraApp.closeModal()" style="margin-left:8px;">Cancelar</button>`;
+    }
+
+    if(m.name==="nuevaCategoriaGasto"){
+      inner = `<h2 class="stencil">Nueva categoría de gasto</h2>
+        <div class="field"><label>Nombre</label><input id="f-nombre" placeholder="Ej: Combustible"></div>
+        <button class="btn" onclick="EuskeraApp.submitNuevaCategoriaGasto()">Guardar</button>
+        <button class="btn ghost" onclick="EuskeraApp.closeModal()" style="margin-left:8px;">Cancelar</button>`;
+    }
+
+    if(m.name==="nuevoAjusteManual"){
+      wide = true;
+      if(!ui.ajusteManualDraft) ui.ajusteManualDraft = nuevoAjusteManualDraft();
+      const d = ui.ajusteManualDraft;
+      inner = `<h2 class="stencil">Cargar ajuste manual</h2>
+        <p style="color:var(--foam-dim);font-size:11.5px;margin-bottom:14px;">Declarás el stock correcto de cada ítem (no la diferencia) — el sistema calcula el ajuste solo, y en insumos reinicia el lote de compra para el FIFO.</p>
+        <div class="field-row">
+          <div class="field"><label>Fecha</label><input id="f-am-fecha" type="date" value="${d.fecha}"></div>
+          <div class="field"><label>Concepto</label><input id="f-am-concepto" value="${d.concepto}" placeholder="Ej: Recuento de stock al 01/07"></div>
+        </div>
+        <div class="section-title first">Ítems</div>
+        <div class="item-row-headers" style="grid-template-columns:100px 1fr 120px 32px;"><span>Tipo</span><span>Ítem</span><span>Stock correcto</span><span></span></div>
+        ${d.items.map((it,idx)=>{
+          const opts = it.itemTipo==='insumo'
+            ? state.insumos.map(i=>`<option value="${i.id}" ${it.itemId==i.id?'selected':''}>${i.nombre} (actual: ${fmtQty(i.stock)})</option>`).join("")
+            : state.productos.map(p=>`<option value="${p.id}" ${it.itemId==p.id?'selected':''}>${p.nombre} (actual: ${p.unidadMedida==='litros'?fmtQty(p.stock):p.stock})</option>`).join("");
+          return `<div class="item-row" style="grid-template-columns:100px 1fr 120px 32px;">
+            <div class="field"><select id="am-tipo-${idx}" onchange="EuskeraApp.onAjusteManualTipoChange(${idx})">
+              <option value="insumo" ${it.itemTipo==='insumo'?'selected':''}>Insumo</option>
+              <option value="producto" ${it.itemTipo==='producto'?'selected':''}>Producto</option>
+            </select></div>
+            <div class="field"><select id="am-item-${idx}"><option value="">Elegí un ítem…</option>${opts}</select></div>
+            <div class="field"><input id="am-stock-${idx}" type="text" inputmode="decimal" value="${it.stockCorrecto}" oninput="EuskeraApp.formatArNumberInput(this)" placeholder="0,000"></div>
+            <button class="remove-btn" onclick="EuskeraApp.removeAjusteManualItem(${idx})" ${idx===0?'style="visibility:hidden;"':''}>✕</button>
+          </div>`;
+        }).join("")}
+        <button class="btn ghost small" onclick="EuskeraApp.addAjusteManualItem()">+ Agregar ítem</button>
+        <button class="btn" onclick="EuskeraApp.submitAjusteManual()" style="margin-top:14px;">Registrar ajuste</button>
+        <button class="btn ghost" onclick="EuskeraApp.closeModal();ui_ajusteManualDraft_reset()" style="margin-left:8px;">Cancelar</button>`;
+    }
+
+    if(m.name==="detalleAjuste"){
+      const a = ui.ajustesData.find(x=>x.id==m.payload);
+      wide = true;
+      inner = `<h2 class="stencil" style="color:var(--copper-300);">Ajuste ${a.numero}</h2>
+        <p style="color:var(--foam-100);font-size:14px;margin-bottom:14px;">${a.concepto} · ${fmtDate(a.fecha)} · ${a.usuario||"—"}</p>
+        <table><thead><tr><th>Ítem</th><th>Tipo</th><th>Cantidad</th><th>Saldo resultante</th></tr></thead><tbody>
+        ${(a.items||[]).map(it=>`<tr><td>${it.itemNombre}</td><td class="mono">${cap(it.itemTipo)}</td>
+          <td class="mono num" style="color:${it.cantidad<0?'var(--rust-600)':'#9FD8AE'};font-weight:700;">${it.cantidad>0?'+':''}${fmtQty(it.cantidad)}</td>
+          <td class="mono num">${fmtQty(it.saldoResultante)}</td></tr>`).join("")}
+        </tbody></table>
+        <div style="margin-top:18px;"><button class="btn ghost" onclick="EuskeraApp.closeModal()">Cerrar</button></div>`;
+    }
+
+    if(m.name==="confirmarEliminar"){
+      inner = `<h2 class="stencil">Confirmar</h2>
+        <p style="color:var(--foam-100);font-size:14px;margin-bottom:20px;">¿Seguro que querés eliminar ${m.payload}? Esta acción no se puede deshacer.</p>
+        <button class="btn danger" onclick="EuskeraApp.ejecutarEliminar()">Sí, eliminar</button>
+        <button class="btn ghost" onclick="EuskeraApp.closeModal()" style="margin-left:8px;">Cancelar</button>`;
+    }
+
+    if(m.name==="detalleRemito"){
+      const r = state.remitos.find(x=>x.id==m.payload);
+      wide = true;
+      inner = `<h2 class="stencil">Venta ${r.numero}</h2>
+        <p style="color:var(--foam-100);font-size:15px;margin-bottom:14px;">
+          ${fmtDate(r.fecha)} · ${r.clienteNombre} · ${cap(r.tipoVenta)} · ${r.medioPago}
+          ${(r.barriles&&r.barriles.length) ? ' · Barril: '+r.barriles.map(b=>b.barrilId+(b.descripcion?' ('+b.descripcion+')':'')).join(', ') : ''}
+        </p>
+        <table><thead><tr><th>Descripción</th><th>Cantidad</th><th>Precio unit.</th><th>Subtotal</th></tr></thead><tbody>
+        ${(r.items||[]).map(it=>`<tr><td>${it.descripcion}</td><td class="mono">${it.cantidad}</td><td class="mono num">${fmtMoney(it.precioUnit)}</td><td class="mono num">${fmtMoney(it.cantidad*it.precioUnit)}</td></tr>`).join("")}
+        </tbody></table>
+        <div class="remito-total">Total: ${fmtMoney(r.total)}</div>
+        <div style="margin-top:18px;">
+          <a class="btn" href="remito_pdf.php?id=${r.id}" target="_blank" style="text-decoration:none;display:inline-block;">Ver PDF</a>
+          <button class="btn ghost" onclick="EuskeraApp.closeModal()" style="margin-left:8px;">Cerrar</button>
+        </div>`;
+    }
+
+    if(m.name==="nuevoBarril"){
+      inner = `<h2 class="stencil">Nuevo barril</h2>
+        <div class="field"><label>Identificador</label><input id="f-id" placeholder="Ej: B-003" maxlength="10"></div>
+        <div class="field"><label>Descripción</label><input id="f-descripcion" placeholder="Ej: Barril chico rosca" maxlength="20"></div>
+        <div class="field"><label>Litros</label><input id="f-litros" type="number" placeholder="30"></div>
+        <button class="btn" onclick="EuskeraApp.submitNuevoBarril()">Guardar</button>
+        <button class="btn ghost" onclick="EuskeraApp.closeModal()" style="margin-left:8px;">Cancelar</button>`;
+    }
+
+    if(m.name==="editarBarril"){
+      const b = state.barriles.find(x=>x.id===m.payload);
+      inner = `<h2 class="stencil">Modificar barril</h2>
+        <div class="field"><label>Identificador</label><input id="f-id" value="${b.id}" maxlength="10"></div>
+        <div class="field"><label>Descripción</label><input id="f-descripcion" value="${b.descripcion||''}" maxlength="20"></div>
+        <div class="field"><label>Litros</label><input id="f-litros" type="number" value="${b.litros}"></div>
+        <p style="color:var(--foam-dim);font-size:11.5px;">Si cambiás el identificador y ya imprimiste una etiqueta QR con el anterior, vas a necesitar una etiqueta nueva.</p>
+        <button class="btn" onclick="EuskeraApp.submitEditarBarril('${b.id}')">Guardar cambios</button>
+        <button class="btn ghost" onclick="EuskeraApp.closeModal()" style="margin-left:8px;">Cancelar</button>`;
+    }
+
+    if(m.name==="entregarBarril"){
+      const opts = state.clientes.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join("");
+      inner = `<h2 class="stencil">Entregar barril ${m.payload}</h2>
+        <div class="field"><label>Cliente</label><select id="f-cliente"><option value="">Elegí un cliente…</option>${opts}</select></div>
+        <button class="btn" onclick="EuskeraApp.submitEntregarBarril('${m.payload}')">Confirmar entrega</button>
+        <button class="btn ghost" onclick="EuskeraApp.closeModal()" style="margin-left:8px;">Cancelar</button>`;
+    }
+
+    if(m.name==="qr"){
+      const id = m.payload;
+      inner = `<h2 class="stencil">QR — Barril ${id}</h2>
+        <div class="qr-print"><div id="qr-render"></div><div class="lbl">EUSKERA · ${id}</div></div>
+        <p style="color:var(--foam-dim);font-size:12px;margin-top:12px;">Imprimí esta etiqueta y pegala al barril.</p>
+        <button class="btn" onclick="window.print()">Imprimir etiqueta</button>
+        <button class="btn ghost" onclick="EuskeraApp.closeModal()" style="margin-left:8px;">Cerrar</button>`;
+    }
+
+    if(m.name==="nuevoProducto" || m.name==="editarProducto"){
+      const editing = m.name==="editarProducto";
+      const p = editing ? state.productos.find(x=>x.id==m.payload) : null;
+      inner = `<h2 class="stencil">${editing?"Editar":"Nuevo"} producto</h2>
+        <div class="field-row">
+          <div class="field"><label>Código</label><input id="f-codprod" placeholder="ENV-001" value="${editing?(p.codProd||''):''}"></div>
+          <div class="field"><label>Tipo</label>
+            <select id="f-tipo">
+              <option value="granel" ${editing&&p.tipo==="granel"?"selected":""}>Granel</option>
+              <option value="envase" ${editing&&p.tipo==="envase"?"selected":""}>Envase</option>
+              <option value="recarga" ${editing&&p.tipo==="recarga"?"selected":""}>Recarga</option>
+              <option value="merch" ${editing&&p.tipo==="merch"?"selected":""}>Merchandising</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label>Descripción</label><input id="f-nombre" placeholder="Growler 1.9 Lts. (Envase)" value="${editing?p.nombre:''}"></div>
+        <div class="field-row">
+          <div class="field"><label>Unidad de medida</label>
+            <select id="f-unidadmedida">
+              <option value="unidades" ${editing&&p.unidadMedida==="unidades"?"selected":""}>Unidades</option>
+              <option value="litros" ${editing&&p.unidadMedida==="litros"?"selected":""}>Litros</option>
+              <option value="kilogramos" ${editing&&p.unidadMedida==="kilogramos"?"selected":""}>Kilogramos</option>
+            </select>
+          </div>
+          <div class="field"><label>Precio</label><input id="f-precio" type="number" value="${editing?p.precio:''}" placeholder="6500"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Stock ${editing?"":"inicial"}</label><input id="f-stock" type="number" value="${editing?p.stock:''}" placeholder="10"></div>
+          <div class="field"><label>Stock mínimo</label><input id="f-stockminimo" type="number" value="${editing?p.stockMinimo:''}" placeholder="0"></div>
+        </div>
+        <div class="field"><label>Stock de seguridad (alerta en rojo por debajo de este número)</label><input id="f-stockseguridad" type="number" value="${editing?p.stockSeguridad:''}" placeholder="0"></div>
+        <button class="btn" onclick="${editing?`EuskeraApp.submitEditarProducto(${p.id})`:'EuskeraApp.submitNuevoProducto()'}">Guardar</button>
+        <button class="btn ghost" onclick="EuskeraApp.closeModal()" style="margin-left:8px;">Cancelar</button>`;
+    }
+
+    if(m.name==="nuevoCliente" || m.name==="editarCliente"){
+      const editing = m.name==="editarCliente";
+      const c = editing ? state.clientes.find(x=>x.id==m.payload) : null;
+      inner = `<h2 class="stencil">${editing?"Editar":"Nuevo"} cliente</h2>
+        <div class="field"><label>Nombre</label><input id="f-nombre" placeholder="Bar / persona" value="${editing?c.nombre:''}"></div>
+        <div class="field"><label>Razón social</label><input id="f-razonsocial" placeholder="Opcional" value="${editing?(c.razonSocial||''):''}"></div>
+        <div class="field-row">
+          <div class="field"><label>CUIT</label><input id="f-cuit" placeholder="20-12345678-9" value="${editing?(c.cuit||''):''}" maxlength="13" oninput="EuskeraApp.formatCuitInput(this)"></div>
+          <div class="field"><label>Teléfono</label><input id="f-telefono" placeholder="Opcional" value="${editing?(c.telefono||''):''}"></div>
+        </div>
+        <div class="field"><label>Email</label><input id="f-email" type="email" placeholder="Opcional" value="${editing?(c.email||''):''}"></div>
+        <div class="field"><label>Dirección</label><input id="f-direccion" placeholder="Calle y número" value="${editing?(c.direccion||''):''}"></div>
+        <div class="field-row">
+          <div class="field"><label>Localidad</label><input id="f-localidad" placeholder="Apóstoles" value="${editing?(c.localidad||''):''}"></div>
+          <div class="field"><label>CP</label><input id="f-cp" placeholder="3350" value="${editing?(c.cp||''):''}"></div>
+        </div>
+        <div class="field"><label>Provincia</label><input id="f-provincia" placeholder="Misiones" value="${editing?(c.provincia||''):''}"></div>
+        <button class="btn" onclick="${editing?`EuskeraApp.submitEditarCliente(${c.id})`:'EuskeraApp.submitNuevoCliente()'}">Guardar</button>
+        <button class="btn ghost" onclick="EuskeraApp.closeModal()" style="margin-left:8px;">Cancelar</button>`;
+    }
+
+    if(m.name==="detalleCliente"){
+      wide = true;
+      const c = state.clientes.find(x=>x.id==m.payload);
+      const ventasCliente = state.remitos.filter(r=>r.clienteId==c.id).sort((a,b)=>b.id-a.id);
+      const ultimaVenta = ventasCliente[0];
+      const barrilesCliente = state.barriles.filter(b=>b.clienteId==c.id && b.estado!=='planta');
+      inner = `<h2 class="stencil" style="font-size:22px;color:var(--copper-300);">${c.nombre}</h2>
+        <div class="mono" style="font-size:14.5px;">${c.telefono?('Tel: '+c.telefono):''}${c.telefono&&c.email?' · ':''}${c.email?('Mail: '+c.email):''}</div>
+        <div class="section-title first">Última venta</div>
+        ${ultimaVenta ? `<table><tbody><tr><td class="mono">${ultimaVenta.numero}</td><td class="mono">${fmtDate(ultimaVenta.fecha)}</td><td class="mono num">${fmtMoney(ultimaVenta.total)}</td></tr></tbody></table>` : `<div class="empty">Todavía no tiene ventas registradas.</div>`}
+        <div class="section-title">Barriles en su poder</div>
+        ${barrilesCliente.length ? barrilesCliente.map(b=>`<div class="mono" style="font-size:14.5px;">${b.id}${b.descripcion?' · '+b.descripcion:''} (${b.litros}L) — desde ${fmtDate(b.fechaEntrega)}</div>`).join("") : `<div class="empty">No tiene barriles nuestros en este momento.</div>`}
+        <div class="section-title">Contactos</div>
+        ${(c.contactos&&c.contactos.length) ? c.contactos.map(ct=>`<div class="mono" style="font-size:13.5px;">${ct.nombre||"—"}${ct.telefono?' · '+ct.telefono:''}${ct.mail?' · '+ct.mail:''}</div>`).join("") : `<div class="empty">Sin contactos adicionales cargados.</div>`}
+        <button class="btn ghost small" style="margin-top:10px;" onclick="EuskeraApp.openModal('nuevoContactoCliente',${c.id})">+ Agregar contacto</button>
+        <div style="margin-top:18px;"><button class="btn ghost" onclick="EuskeraApp.closeModal()">Cerrar</button></div>`;
+    }
+
+    if(m.name==="nuevoContactoCliente"){
+      inner = `<h2 class="stencil">Nuevo contacto</h2>
+        <div class="field"><label>Nombre</label><input id="f-nombre" placeholder="Nombre del contacto"></div>
+        <div class="field-row">
+          <div class="field"><label>Teléfono</label><input id="f-telefono" placeholder="Opcional"></div>
+          <div class="field"><label>Mail</label><input id="f-mail" type="email" placeholder="Opcional"></div>
+        </div>
+        <button class="btn" onclick="EuskeraApp.submitNuevoContactoCliente(${m.payload})">Guardar</button>
+        <button class="btn ghost" onclick="EuskeraApp.openModal('detalleCliente',${m.payload})" style="margin-left:8px;">Cancelar</button>`;
+    }
+
+    if(m.name==="nuevoProveedor" || m.name==="editarProveedor"){
+      const editing = m.name==="editarProveedor";
+      const p = editing ? state.proveedores.find(x=>x.id==m.payload) : null;
+      inner = `<h2 class="stencil">${editing?"Editar":"Nuevo"} proveedor</h2>
+        <div class="field"><label>Nombre</label><input id="f-nombre" placeholder="Nombre del proveedor" value="${editing?p.nombre:''}"></div>
+        <div class="field-row">
+          <div class="field"><label>CUIT</label><input id="f-cuit" placeholder="20-12345678-9" value="${editing?(p.cuit||''):''}" maxlength="13" oninput="EuskeraApp.formatCuitInput(this)"></div>
+          <div class="field"><label>Teléfono</label><input id="f-telefono" placeholder="Opcional" value="${editing?(p.telefono||''):''}"></div>
+        </div>
+        <div class="field"><label>Email</label><input id="f-email" type="email" placeholder="Opcional" value="${editing?(p.email||''):''}"></div>
+        <div class="field"><label>Contacto</label><input id="f-contacto" placeholder="Nombre de la persona de contacto" value="${editing?(p.contacto||''):''}"></div>
+        <div class="field"><label>Dirección</label><input id="f-direccion" placeholder="Calle y número" value="${editing?(p.direccion||''):''}"></div>
+        <div class="field-row">
+          <div class="field"><label>Localidad</label><input id="f-localidad" placeholder="Apóstoles" value="${editing?(p.localidad||''):''}"></div>
+          <div class="field"><label>CP</label><input id="f-cp" placeholder="3350" value="${editing?(p.cp||''):''}"></div>
+        </div>
+        <div class="field"><label>Provincia</label><input id="f-provincia" placeholder="Misiones" value="${editing?(p.provincia||''):''}"></div>
+        <button class="btn" onclick="${editing?`EuskeraApp.submitEditarProveedor(${p.id})`:'EuskeraApp.submitNuevoProveedor()'}">Guardar</button>
+        <button class="btn ghost" onclick="EuskeraApp.closeModal()" style="margin-left:8px;">Cancelar</button>`;
+    }
+
+    if(m.name==="detalleProveedor"){
+      wide = true;
+      const p = state.proveedores.find(x=>x.id==m.payload);
+      const comprasProveedor = state.compras.filter(c=>c.proveedorId==p.id).sort((a,b)=>b.id-a.id);
+      const ultimaCompra = comprasProveedor[0];
+      inner = `<h2 class="stencil" style="font-size:22px;color:var(--copper-300);">${p.nombre}</h2>
+        <div class="mono" style="font-size:14.5px;">${p.telefono?('Tel: '+p.telefono):''}${p.telefono&&p.email?' · ':''}${p.email?('Mail: '+p.email):''}</div>
+        <div class="section-title first">Última compra</div>
+        ${ultimaCompra ? `<table><tbody><tr>
+            <td class="mono">${fmtDate(ultimaCompra.fecha)}</td>
+            <td class="mono">${ultimaCompra.numeroDocumento||"s/n"}</td>
+            <td>${(ultimaCompra.items||[]).map(it=>it.descripcion).join(", ")}</td>
+            <td class="mono num">${fmtMoney(ultimaCompra.total)}</td>
+          </tr></tbody></table>` : `<div class="empty">Todavía no tiene compras registradas.</div>`}
+        <div class="section-title">Contactos</div>
+        ${(p.contactos&&p.contactos.length) ? p.contactos.map(ct=>`<div class="mono" style="font-size:13.5px;">${ct.nombre||"—"}${ct.telefono?' · '+ct.telefono:''}${ct.mail?' · '+ct.mail:''}</div>`).join("") : `<div class="empty">Sin contactos adicionales cargados.</div>`}
+        <button class="btn ghost small" style="margin-top:10px;" onclick="EuskeraApp.openModal('nuevoContactoProveedor',${p.id})">+ Agregar contacto</button>
+        <div style="margin-top:18px;"><button class="btn ghost" onclick="EuskeraApp.closeModal()">Cerrar</button></div>`;
+    }
+
+    if(m.name==="nuevoContactoProveedor"){
+      inner = `<h2 class="stencil">Nuevo contacto</h2>
+        <div class="field"><label>Nombre</label><input id="f-nombre" placeholder="Nombre del contacto"></div>
+        <div class="field-row">
+          <div class="field"><label>Teléfono</label><input id="f-telefono" placeholder="Opcional"></div>
+          <div class="field"><label>Mail</label><input id="f-mail" type="email" placeholder="Opcional"></div>
+        </div>
+        <button class="btn" onclick="EuskeraApp.submitNuevoContactoProveedor(${m.payload})">Guardar</button>
+        <button class="btn ghost" onclick="EuskeraApp.openModal('detalleProveedor',${m.payload})" style="margin-left:8px;">Cancelar</button>`;
+    }
+
+    if(m.name==="nuevoInsumo" || m.name==="editarInsumo"){
+      const editing = m.name==="editarInsumo";
+      const i = editing ? state.insumos.find(x=>x.id==m.payload) : null;
+      const tipoOpts = state.tiposInsumo.map(t=>`<option value="${t.id}" ${editing&&i.tipoId==t.id?'selected':''}>${t.nombre}</option>`).join("");
+      inner = `<h2 class="stencil">${editing?"Editar":"Nuevo"} insumo</h2>
+        <div class="field"><label>Nombre</label><input id="f-nombre" placeholder="Malta Pilsen, Lúpulo Cascade, Tapas, CO2…" value="${editing?i.nombre:''}"></div>
+        <div class="field-row">
+          <div class="field"><label>Tipo</label><select id="f-tipoinsumo"><option value="">Sin especificar</option>${tipoOpts}</select></div>
+          <div class="field"><label>Unidad</label>
+            <select id="f-unidad">
+              <option value="unidades" ${editing&&i.unidad==="unidades"?"selected":""}>Unidades</option>
+              <option value="litros" ${editing&&i.unidad==="litros"?"selected":""}>Litros</option>
+              <option value="kilogramos" ${editing&&i.unidad==="kilogramos"?"selected":""}>Kilogramos</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          ${editing ? `<div class="field"><label>Stock actual</label><input type="text" value="${fmtQty(i.stock)} ${i.unidad}" disabled style="opacity:0.6;"></div>` : `<div class="field"><label>Stock inicial</label><input id="f-stock" type="number" value="" placeholder="0"></div>`}
+          <div class="field"><label>Stock mínimo</label><input id="f-stockminimo" type="number" value="${editing?i.stockMinimo:''}" placeholder="0"></div>
+        </div>
+        ${editing ? `<p style="color:var(--foam-dim);font-size:11px;margin:-8px 0 12px;">Para corregir el stock de un insumo existente, usá Ajustes → Cargar ajuste manual (así queda registrado).</p>` : ``}
+        <div class="field"><label>Stock de seguridad (alerta en rojo por debajo de este número)</label><input id="f-stockseguridad" type="number" value="${editing?i.stockSeguridad:''}" placeholder="0"></div>
+        <div class="field"><label>Precio de referencia (para valorizar el stock si todavía no hay compras cargadas)</label><input id="f-precioreferencia" type="number" value="${editing?i.precioReferencia:''}" placeholder="0"></div>
+        <button class="btn" onclick="${editing?`EuskeraApp.submitEditarInsumo(${i.id})`:'EuskeraApp.submitNuevoInsumo()'}">Guardar</button>
+        <button class="btn ghost" onclick="EuskeraApp.closeModal()" style="margin-left:8px;">Cancelar</button>`;
+    }
+
+    if(m.name==="detalleInsumo"){
+      const i = state.insumos.find(x=>x.id==m.payload);
+      const comprasInsumo = state.compras.filter(c=>(c.items||[]).some(it=>it.tipo==='insumo' && it.insumoId==i.id)).sort((a,b)=>b.id-a.id);
+      inner = `<h2 class="stencil" style="font-size:20px;color:var(--copper-300);">${i.nombre}</h2>
+        <p style="color:var(--foam-dim);font-size:12.5px;margin-bottom:10px;">Tipo: ${i.tipoNombre||"—"}</p>
+        <table style="margin-bottom:10px;"><tbody>
+          <tr><td>Stock actual</td><td class="mono num">${fmtQty(i.stock)} ${i.unidad}</td></tr>
+          <tr><td>Stock mínimo</td><td class="mono num">${fmtQty(i.stockMinimo)} ${i.unidad}</td></tr>
+          <tr><td>Stock de seguridad</td><td class="mono num">${fmtQty(i.stockSeguridad)} ${i.unidad}</td></tr>
+          <tr><td>Último precio de compra</td><td class="mono num">${fmtMoney3(i.ultimoPrecio)}</td></tr>
+          <tr><td>Valorizado</td><td class="mono num" style="color:var(--copper-300);font-weight:800;">${fmtMoney3(i.valorStock)}</td></tr>
+        </tbody></table>
+        <div class="section-title">Últimas compras</div>
+        ${comprasInsumo.length ? `<table><tbody>${comprasInsumo.slice(0,10).map(c=>`<tr><td class="mono">${fmtDate(c.fecha)}</td><td>${c.proveedorNombre||"—"}</td><td class="mono num">${fmtMoney(c.total)}</td></tr>`).join("")}</tbody></table>` : `<div class="empty">Sin compras registradas de este insumo.</div>`}
+        <button class="btn ghost" onclick="EuskeraApp.closeModal()" style="margin-top:18px;">Cerrar</button>`;
+    }
+
+    if(m.name==="nuevoTipoInsumo"){
+      inner = `<h2 class="stencil">Nuevo tipo de insumo</h2>
+        <div class="field"><label>Nombre</label><input id="f-nombre" placeholder="Ej: Productivo"></div>
+        <button class="btn" onclick="EuskeraApp.submitNuevoTipoInsumo()">Guardar</button>
+        <button class="btn ghost" onclick="EuskeraApp.closeModal()" style="margin-left:8px;">Cancelar</button>`;
+    }
+
+    if(m.name==="nuevoMedioPago"){
+      inner = `<h2 class="stencil">Nuevo medio de pago</h2>
+        <div class="field"><label>Nombre</label><input id="f-nombre" placeholder="Ej: Cuenta DNI"></div>
+        <button class="btn" onclick="EuskeraApp.submitNuevoMedioPago()">Guardar</button>
+        <button class="btn ghost" onclick="EuskeraApp.closeModal()" style="margin-left:8px;">Cancelar</button>`;
+    }
+
+    if(m.name==="nuevaCompra"){
+      wide = true;
+      if(!ui.compraDraft) ui.compraDraft = nuevaCompraDraft();
+      const d = ui.compraDraft;
+      const provOpts = state.proveedores.map(p=>`<option value="${p.id}" ${d.proveedorId==p.id?'selected':''}>${p.nombre}</option>`).join("");
+      let total = 0;
+      d.items.forEach(it=>{ total += Number(it.cantidad||0)*Number(it.precioUnitario||0); });
+
+      inner = `<h2 class="stencil">Registrar compra</h2>
+        <div class="field-row">
+          <div class="field"><label>Proveedor</label><select id="f-compra-proveedor"><option value="">Elegí un proveedor…</option>${provOpts}</select></div>
+          <div class="field"><label>Fecha</label><input id="f-compra-fecha" type="date" value="${d.fecha}"></div>
+        </div>
+        <div class="field"><label>N° Documento (factura/remito del proveedor)</label><input id="f-compra-numdoc" placeholder="Opcional" value="${d.numeroDocumento}" maxlength="13" oninput="EuskeraApp.formatDocInput(this)"></div>
+        <div class="section-title first" style="margin-top:18px;">Renglones</div>
+        <div class="item-row-headers"><span>Ítem</span><span>Cantidad</span><span>Precio unit.</span><span>Subtotal</span><span></span></div>
+        ${d.items.map((it,idx)=>renderCompraItemRow(it,idx)).join("")}
+        <button class="btn ghost small" onclick="EuskeraApp.addCompraItem()">+ Agregar renglón</button>
+        <div class="remito-total">Total: ${fmtMoney(total)}</div>
+        <div class="field"><label>Medio de pago</label><select id="f-compra-mediopago">${mediosPagoOpts(d.medioPago)}</select></div>
+        <button class="btn" onclick="EuskeraApp.submitNuevaCompra()">Registrar compra</button>
+        <button class="btn ghost" onclick="EuskeraApp.closeModal();ui_compraDraft_reset()" style="margin-left:8px;">Cancelar</button>`;
+    }
+
+    if(m.name==="editarCompra"){
+      wide = true;
+      const c = state.compras.find(x=>x.id==m.payload);
+      if(!ui.editCompraDraft || ui.editCompraDraft.compraId !== m.payload){
+        ui.editCompraDraft = {
+          compraId: m.payload, proveedorId: c.proveedorId||"", fecha: c.fecha, numeroDocumento: c.numeroDocumento||"", medioPago: c.medioPago,
+          items: (c.items||[]).map(it=>({id:it.id, descripcion:it.descripcion, cantidad:it.cantidad, precioUnitario:it.precioUnitario}))
+        };
+      }
+      const d = ui.editCompraDraft;
+      const provOpts = state.proveedores.map(p=>`<option value="${p.id}" ${d.proveedorId==p.id?'selected':''}>${p.nombre}</option>`).join("");
+      let total = 0;
+      d.items.forEach(it=>{ total += Number(it.cantidad||0)*Number(it.precioUnitario||0); });
+
+      inner = `<h2 class="stencil">Editar compra</h2>
+        <div class="field-row">
+          <div class="field"><label>Proveedor</label><select id="f-editcompra-proveedor">${provOpts}</select></div>
+          <div class="field"><label>Fecha</label><input id="f-editcompra-fecha" type="date" value="${d.fecha}"></div>
+        </div>
+        <div class="field"><label>N° Documento</label><input id="f-editcompra-numdoc" value="${d.numeroDocumento}" maxlength="13" oninput="EuskeraApp.formatDocInput(this)"></div>
+        <div class="field"><label>Medio de pago</label><select id="f-editcompra-mediopago">${mediosPagoOpts(d.medioPago)}</select></div>
+
+        <div class="section-title" style="margin-top:18px;">Renglones</div>
+        <div class="item-row-headers" style="grid-template-columns:1fr 90px 110px 110px;"><span>Ítem</span><span>Cantidad</span><span>Precio unit.</span><span>Subtotal</span></div>
+        ${d.items.map((it,idx)=>`
+          <div class="item-row" style="grid-template-columns:1fr 90px 110px 110px;">
+            <div class="field" style="padding-top:9px;">${it.descripcion}</div>
+            <div class="field"><input id="eci-cantidad-${idx}" type="number" value="${it.cantidad}" step="0.01" onchange="EuskeraApp.syncEditCompraDraftFromDOM();EuskeraApp.render()"></div>
+            <div class="field"><input id="eci-precio-${idx}" type="number" value="${it.precioUnitario}" onchange="EuskeraApp.syncEditCompraDraftFromDOM();EuskeraApp.render()"></div>
+            <div class="subtotal-box">${fmtMoney(it.cantidad*it.precioUnitario)}</div>
+          </div>`).join("")}
+        <div class="remito-total">Total: ${fmtMoney(total)}</div>
+
+        <button class="btn" onclick="EuskeraApp.submitEditarCompra(${c.id})">Guardar cambios</button>
+        <button class="btn ghost" onclick="EuskeraApp.closeModal();ui_editCompraDraft_reset()" style="margin-left:8px;">Cancelar</button>`;
+    }
+
+    if(m.name==="kardex"){
+      wide = true;
+      const d = ui.kardexData;
+      inner = `<h2 class="stencil" style="color:var(--copper-300);">Kardex — ${d.nombre}</h2>
+        <p style="color:var(--foam-dim);font-size:11.5px;margin-bottom:14px;">Registra los movimientos de stock desde que se activó esta función — no incluye lo anterior.</p>
+        ${d.movimientos===null ? `<div style="color:var(--foam-dim);padding:20px 0;">Cargando…</div>` :
+          (d.movimientos.length===0 ? `<div class="empty">Todavía no hay movimientos registrados para este ítem.</div>` : `
+          <table><thead><tr><th>Fecha</th><th>Tipo</th><th>Cantidad</th><th>Saldo resultante</th><th>Referencia</th><th>Usuario</th></tr></thead><tbody>
+          ${d.movimientos.map(mv=>`<tr>
+            <td class="mono">${fmtDate(mv.fecha)}</td>
+            <td class="mono">${tipoMovLabel[mv.tipoMovimiento]||mv.tipoMovimiento}</td>
+            <td class="mono num" style="color:${mv.cantidad<0?'var(--rust-600)':'#9FD8AE'};font-weight:700;">${mv.cantidad>0?'+':''}${fmtQty(mv.cantidad)}</td>
+            <td class="mono num">${fmtQty(mv.saldoResultante)}</td>
+            <td>${mv.referencia||"—"}</td>
+            <td class="mono">${mv.usuario||"—"}</td>
+          </tr>`).join("")}
+          </tbody></table>`)}
+        <div style="margin-top:18px;"><button class="btn ghost" onclick="EuskeraApp.closeModal()">Cerrar</button></div>`;
+    }
+
+    if(m.name==="detalleCompra"){
+      const c = state.compras.find(x=>x.id==m.payload);
+      wide = true;
+      inner = `<h2 class="stencil">Compra ${c.numeroDocumento?('N° '+c.numeroDocumento):('#'+c.id)}</h2>
+        <p style="color:var(--foam-100);font-size:15px;margin-bottom:14px;">
+          ${fmtDate(c.fecha)} · ${c.proveedorNombre||"Sin proveedor"} · ${c.medioPago}
+        </p>
+        <table><thead><tr><th>Ítem</th><th>Tipo</th><th>Cantidad</th><th>Precio unit.</th><th>Subtotal</th></tr></thead><tbody>
+        ${(c.items||[]).map(it=>`<tr><td>${it.descripcion}</td><td class="mono">${cap(it.tipo)}</td><td class="mono">${it.cantidad} ${it.unidad||""}</td><td class="mono num">${fmtMoney(it.precioUnitario)}</td><td class="mono num">${fmtMoney(it.cantidad*it.precioUnitario)}</td></tr>`).join("")}
+        </tbody></table>
+        <div class="remito-total">Total: ${fmtMoney(c.total)}</div>
+        <button class="btn ghost" onclick="EuskeraApp.closeModal()" style="margin-top:18px;">Cerrar</button>`;
+    }
+
+    if(m.name==="remitoGenerado"){
+      const g = ui.remitoGenerado;
+      inner = `<h2 class="stencil">Remito generado</h2>
+        <p style="color:var(--foam-100);font-size:14px;margin-bottom:18px;">Se generó el remito <strong>${g.numero}</strong>.</p>
+        <a class="btn" href="remito_pdf.php?id=${g.id}" target="_blank" style="text-decoration:none;display:inline-block;">Ver / descargar PDF</a>
+        <button class="btn ghost" onclick="EuskeraApp.closeModal()" style="margin-left:8px;">Cerrar</button>`;
+    }
+
+    if(m.name==="nuevoRemito"){
+      wide = true;
+      if(!ui.remitoDraft) ui.remitoDraft = nuevoRemitoDraft();
+      const d = ui.remitoDraft;
+      const clienteOpts = state.clientes.map(c=>`<option value="${c.id}" ${d.clienteId==c.id?'selected':''}>${c.nombre}</option>`).join("");
+      const barrilOpts = state.barriles.filter(b=>b.estado==='planta').map(b=>
+        `<label style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--foam-faint);cursor:pointer;">
+          <input type="checkbox" class="remito-barril-check" value="${b.id}" ${d.barrilIds.includes(b.id)?'checked':''} style="width:auto;" onchange="EuskeraApp.syncRemitoDraftFromDOM()">
+          <span class="mono">${b.id}</span>${b.descripcion?' · '+b.descripcion:''} (${b.litros}L)
+        </label>`).join("");
+      let total = 0;
+      d.items.forEach(it=>{ total += Number(it.cantidad||0)*Number(it.precioUnit||0); });
+
+      inner = `<h2 class="stencil">Nuevo remito</h2>
+        <div class="field-row">
+          <div class="field"><label>Cliente</label><select id="f-remito-cliente">
+            <option value="">Elegí un cliente…</option>${clienteOpts}
+          </select></div>
+          <div class="field"><label>Fecha</label><input id="f-remito-fecha" type="date" value="${d.fecha}"></div>
+        </div>
+        <div class="field"><label>Tipo de Venta</label><select id="f-remito-tipoventa" onchange="EuskeraApp.onRemitoTipoVentaChange()">
+            <option value="varios" ${d.tipoVenta==='varios'?'selected':''}>Varios</option>
+            <option value="recarga" ${d.tipoVenta==='recarga'?'selected':''}>Recarga</option>
+            <option value="granel" ${d.tipoVenta==='granel'?'selected':''}>Granel</option>
+          </select></div>
+        ${d.tipoVenta==='granel' ? `<div class="field"><label>¿Qué barril(es) se lleva?</label>
+            <div style="border:1px solid var(--foam-faint);border-radius:6px;padding:0 10px;max-height:180px;overflow-y:auto;">
+              ${barrilOpts || '<p style="color:var(--foam-dim);font-size:12px;padding:10px 0;">No hay barriles en planta.</p>'}
+            </div>
+          </div>` : ''}
+
+        <div class="section-title first" style="margin-top:18px;">Renglones</div>
+        <div class="item-row-headers"><span>Producto</span><span>Cantidad</span><span>Precio unit.</span><span>Subtotal</span><span></span></div>
+        ${d.items.map((it,idx)=>renderRemitoItemRow(it,idx)).join("")}
+        <button class="btn ghost small" onclick="EuskeraApp.addRemitoItem()">+ Agregar renglón</button>
+        <div class="remito-total">Total: ${fmtMoney(total)}</div>
+        <div class="field"><label>Medio de pago</label><select id="f-remito-mediopago">${mediosPagoOpts(d.medioPago)}</select></div>
+        <button class="btn" onclick="EuskeraApp.submitNuevoRemito()">Generar remito</button>
+        <button class="btn ghost" onclick="EuskeraApp.closeModal();ui_remitoDraft_reset()" style="margin-left:8px;">Cancelar</button>`;
+    }
+
+    return `<div class="modal-backdrop" onclick="if(event.target===this)EuskeraApp.closeModal()"><div class="modal${wide?' wide':''}">${inner}</div></div>`;
+  }
+
+  function onInsumoChange(){
+    const sel = document.getElementById("f-insumo");
+    const unidadField = document.getElementById("f-unidad");
+    if(sel.value){ const opt = sel.options[sel.selectedIndex]; unidadField.value = opt.dataset.unidad || ""; }
+  }
+
+  function render(){
+    const app = document.getElementById("app");
+    if(!ui.loaded){ app.innerHTML = `<div style="padding:40px;color:var(--foam-dim);">Cargando panel…</div>`; return; }
+    if(!ui.auth){ app.innerHTML = renderLogin(); return; }
+
+    let content = "";
+    if(ui.tab==="dashboard") content = renderDashboard();
+    else if(ui.tab==="barriles") content = renderBarriles();
+    else if(ui.tab==="productos") content = renderProductos();
+    else if(ui.tab==="insumos") content = renderInsumos();
+    else if(ui.tab==="proveedores") content = renderProveedores();
+    else if(ui.tab==="compras") content = renderCompras();
+    else if(ui.tab==="clientes") content = renderClientes();
+    else if(ui.tab==="ventas") content = renderVentas();
+    else if(ui.tab==="cuentascorrientes") content = renderCuentasCorrientes();
+    else if(ui.tab==="produccion") content = renderProduccion();
+    else if(ui.tab==="recetas") content = renderRecetas();
+    else if(ui.tab==="dashventas") content = renderInformes();
+    else if(ui.tab==="dashcompras") content = renderDashCompras();
+    else if(ui.tab==="ajustes") content = renderAjustes();
+    else if(ui.tab==="gastos") content = renderGastos();
+    else if(ui.tab==="categoriasgasto") content = renderCategoriasGasto();
+    else if(ui.tab==="balancemensual") content = renderBalanceMensual();
+    else if(ui.tab==="mediospago") content = renderMediosPago();
+    else if(ui.tab==="tiposinsumo") content = renderTiposInsumo();
+
+    app.innerHTML = `<button class="menu-toggle" onclick="EuskeraApp.toggleSidebar()">☰</button>` + renderSidebar() + `<div class="main">${content}</div>` + renderModal();
+
+    if(ui.tab==="dashventas"){
+      setTimeout(renderInformesCharts, 0);
+    }
+    if(ui.tab==="ajustes" && ui.ajustesData===null){
+      setTimeout(cargarAjustes, 0);
+    }
+
+    if(ui.modal && ui.modal.name==="qr"){
+      const target = document.getElementById("qr-render");
+      if(target && window.QRCode){
+        target.innerHTML = "";
+        new QRCode(target, { text:"https://panel.euskera.com.ar/?barril="+ui.modal.payload, width:160, height:160, colorDark:"#17130F", colorLight:"#ffffff" });
+      }
+    }
+  }
+
+  window.EuskeraApp = {
+    setTab, openModal, closeModal, intentarLogin, logout, render, toggleBarrilExpand, formatCuitInput, formatDocInput, abrirKardex, toggleSidebar, formatArNumberInput,
+    setInformesRango, setInformesQuery, exportCSV,
+    confirmarEliminar, ejecutarEliminar, submitEditarRemito, submitPagoCC, eliminarPagoCC,
+    submitNuevoBarril, submitEditarBarril, submitEntregarBarril, devolverBarril,
+    submitNuevoProducto, submitEditarProducto, ajustarStockProducto,
+    submitNuevoCliente, submitEditarCliente, submitNuevoContactoCliente, submitNuevoProveedor, submitEditarProveedor, submitNuevoContactoProveedor,
+    submitNuevoInsumo, submitEditarInsumo, submitNuevoTipoInsumo, submitNuevoMedioPago,
+    submitNuevaCompra, submitEditarCompra, syncEditCompraDraftFromDOM, addCompraItem, removeCompraItem, onCompraItemTipoChange, syncCompraDraftFromDOM,
+    onLoteProductoChange, onLoteLitrosChange, addLoteItem, removeLoteItem, syncLoteDraftFromDOM, submitNuevoLote, pasarAFermentacion, pasarAMaduracion, submitMarcarFermentado,
+    addRecetaItem, removeRecetaItem, syncRecetaDraftFromDOM, submitNuevaReceta,
+    onAjusteManualTipoChange, addAjusteManualItem, removeAjusteManualItem, syncAjusteManualDraftFromDOM, submitAjusteManual,
+    submitNuevoGasto, submitNuevaCategoriaGasto, setBalanceMes,
+    addRemitoItem, removeRemitoItem, onRemitoProductoChange, onRemitoSubtotalChange, onRemitoTipoVentaChange, syncRemitoDraftFromDOM, submitNuevoRemito
+  };
+  window.ui_remitoDraft_reset = function(){ ui.remitoDraft = null; };
+  window.ui_compraDraft_reset = function(){ ui.compraDraft = null; };
+  window.ui_editCompraDraft_reset = function(){ ui.editCompraDraft = null; };
+  window.ui_loteDraft_reset = function(){ ui.loteDraft = null; };
+  window.ui_recetaDraft_reset = function(){ ui.recetaDraft = null; };
+  window.ui_ajusteManualDraft_reset = function(){ ui.ajusteManualDraft = null; };
+
+  document.addEventListener('keydown', function(e){
+    if(e.key==='Escape' && ui.modal){ closeModal(); }
+  });
+
+  loadData();
+})();
+</script>
+</body>
+</html>

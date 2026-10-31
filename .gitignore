@@ -1,0 +1,14 @@
+# Credenciales reales: nunca al repo
+config.php
+
+# Scripts de una sola vez que BORRAN o corrigen datos de producción
+limpiar_*.php
+revertir_*.php
+reset_*.php
+fix_*.php
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.zip
+*.tar
